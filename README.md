@@ -87,7 +87,9 @@ If you can't meet these criteria, your object is probably violating [SOLID](http
 Compatibility
 -------------
 
-Only RSpec 2 is supported. Tested on Ruby 1.9.2, should work on others though.
+Only RSpec 2 is supported. Tested on all the rubies.
+
+[![Build Status](https://secure.travis-ci.org/xaviershay/rspec-fire.png)](http://travis-ci.org/xaviershay/rspec-fire)
 
 Developing
 ----------
