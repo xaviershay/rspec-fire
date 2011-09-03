@@ -74,8 +74,19 @@ module RSpec
       end
     end
 
+    class FireClassDouble < FireDouble
+      def initialize(*args)
+        super
+        @__checked_methods = :public_methods
+      end
+    end
+
     def fire_double(*args)
       FireDouble.new(*args)
+    end
+
+    def fire_class_double(*args)
+      FireClassDouble.new(*args)
     end
   end
 end
