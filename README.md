@@ -34,6 +34,10 @@ Another solution, that `rspec-fire` adopts, is a more relaxed version that only 
 Usage
 -----
 
+It's a gem!
+
+    gem install rspec-fire
+
 Bit of setup in your `spec_helper.rb`:
 
     require 'rspec/fire'
