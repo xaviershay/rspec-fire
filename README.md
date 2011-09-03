@@ -87,7 +87,7 @@ If you can't meet these criteria, your object is probably violating [SOLID](http
 Compatibility
 -------------
 
-Tested on 1.9.2, should work on others though.
+Only RSpec 2 is supported. Tested on Ruby 1.9.2, should work on others though.
 
 Developing
 ----------
@@ -98,6 +98,7 @@ bundle exec rake spec
 
 Patches welcome! I won't merge anything that isn't spec'ed, but I can help you out with that if you are getting stuck.
 
+Still need to support `#stub_chain` and `#with` methods.
 
 Status
 ------
