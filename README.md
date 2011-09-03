@@ -1,6 +1,8 @@
 rspec-fire
 ==========
 
+Making your test doubles more resilient.
+
     Once,
     a younger brother came to him,
     and asked,
@@ -19,9 +21,7 @@ rspec-fire
 
     "Why not be totally changed into fire?"
 
-      -- "Desert Way", Charlie Hunter
-
-Making your test doubles more resilient.
+      -- Desert Way, Charlie Hunter
 
 Test doubles are sweet for isolating your unit tests, but we lost something in the translation from typed languages. Ruby doesn't have a compiler that can verify the contracts being mocked out are indeed legit. This hurts larger refactorings, since you can totally change a collaborator --- renaming methods, changing the number of arguments --- and all the mocks that were standing in for it will keep pretending everything is ok.
 
@@ -58,8 +58,8 @@ Specify the class being doubled in your specs:
 
 Run your specs:
 
-    rspec spec/user_spec.rb                         # Isolated, won't check
-    rspec -Ilib/email_notifier.rb spec/user_spec.rb # Will fail if :notify method is not defined
+    rspec spec/user_spec.rb                         # Isolated, will pass always
+    rspec -Ilib/email_notifier.rb spec/user_spec.rb # Will fail if EmailNotifier#notify method is not defined
 
 Currently only method presence/absense is checked, but theoretically arity can be checked also.
 
@@ -92,9 +92,9 @@ Only RSpec 2 is supported. Tested on Ruby 1.9.2, should work on others though.
 Developing
 ----------
 
-git clone https://github.com/xaviershay/rspec-fire.git
-bundle install
-bundle exec rake spec
+    git clone https://github.com/xaviershay/rspec-fire.git
+    bundle install
+    bundle exec rake spec
 
 Patches welcome! I won't merge anything that isn't spec'ed, but I can help you out with that if you are getting stuck.
 
