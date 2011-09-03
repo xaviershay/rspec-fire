@@ -54,7 +54,7 @@ module RSpec
         RSpec::Matchers::Matcher.new(:implement, expected_methods, checked_methods) do |expected_methods, checked_methods|
           unimplemented_methods = lambda {|doubled_class|
             implemented_methods = doubled_class.send(checked_methods)
-            expected_methods - implemented_methods
+            expected_methods - implemented_methods.map(&:to_sym) # to_sym for non-1.9 compat
           }
 
           match do |doubled_class|
