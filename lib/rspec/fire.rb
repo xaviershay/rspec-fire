@@ -71,8 +71,6 @@ module RSpec
         args << {} unless Hash === args.last
 
         @__doubled_class_name = doubled_class
-        @__checked_methods    = :public_instance_methods
-        @__method_finder      = :instance_method
 
         # __declared_as copied from rspec/mocks definition of `double`
         args.last[:__declared_as] = 'FireDouble'
@@ -127,6 +125,14 @@ module RSpec
       end
     end
 
+    class FireObjectDouble < FireDouble
+      def initialize(*args)
+        super
+        @__checked_methods = :public_instance_methods
+        @__method_finder   = :instance_method
+      end
+    end
+
     class FireClassDouble < FireDouble
       def initialize(*args)
         super
@@ -136,7 +142,7 @@ module RSpec
     end
 
     def fire_double(*args)
-      FireDouble.new(*args)
+      FireObjectDouble.new(*args)
     end
 
     def fire_class_double(*args)
