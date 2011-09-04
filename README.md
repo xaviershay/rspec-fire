@@ -65,7 +65,7 @@ Run your specs:
     rspec spec/user_spec.rb                         # Isolated, will pass always
     rspec -Ilib/email_notifier.rb spec/user_spec.rb # Will fail if EmailNotifier#notify method is not defined
 
-Currently only method presence/absense is checked, but theoretically arity can be checked also.
+Method presence/absence is checked, and if a `with` is provided then so is arity.
 
 Protips
 -------
@@ -104,7 +104,7 @@ Developing
 
 Patches welcome! I won't merge anything that isn't spec'ed, but I can help you out with that if you are getting stuck.
 
-Still need to support `#stub_chain` and `#with` methods.
+Still need to support `#stub_chain`.
 
 Status
 ------
