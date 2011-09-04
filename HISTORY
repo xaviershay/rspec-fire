@@ -1,2 +1,5 @@
 0.1 - 3 September 2011
   * Initial release
+
+0.2 - 3 September 2011
+  * Checks method arity when a 'with' call is present

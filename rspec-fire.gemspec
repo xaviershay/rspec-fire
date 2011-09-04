@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name     = 'rspec-fire'
-  s.version  = '0.1'
+  s.version  = '0.2'
   s.summary  = 'More resilient test doubles for RSpec.'
   s.platform = Gem::Platform::RUBY
   s.authors  = ["Xavier Shay"]
