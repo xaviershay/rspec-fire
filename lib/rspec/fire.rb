@@ -20,6 +20,8 @@ module RSpec
     class ShouldProxy < SimpleDelegator
       include RecursiveConstMethods
 
+      AM = RSpec::Mocks::ArgumentMatchers
+
       def initialize(doubled_class_name, method_finder, backing)
         @doubled_class_name = doubled_class_name
         @method_finder      = method_finder
@@ -28,8 +30,8 @@ module RSpec
       end
 
       def with(*args, &block)
-        unless RSpec::Mocks::ArgumentMatchers::AnyArgsMatcher === args.first
-          expected_arity = if RSpec::Mocks::ArgumentMatchers::NoArgsMatcher === args.first
+        unless AM::AnyArgsMatcher === args.first
+          expected_arity = if AM::NoArgsMatcher === args.first
             0
           elsif args.length > 0
             args.length
@@ -47,7 +49,9 @@ module RSpec
 
       def ensure_arity(actual)
         if recursive_const_defined?(Object, @doubled_class_name)
-          recursive_const_get(Object, @doubled_class_name).send(@method_finder, sym).should have_arity(actual)
+          recursive_const_get(Object, @doubled_class_name).
+            send(@method_finder, sym).
+            should have_arity(actual)
         end
       end
 
@@ -58,7 +62,8 @@ module RSpec
           end
 
           failure_message_for_should do |method|
-            "Wrong number of arguments for #{method.name}. Expected #{method.arity}, got #{actual}."
+            "Wrong number of arguments for #{method.name}. " +
+              "Expected #{method.arity}, got #{actual}."
           end
         end
       end
@@ -102,10 +107,14 @@ module RSpec
       end
 
       def implement(expected_methods, checked_methods)
-        RSpec::Matchers::Matcher.new(:implement, expected_methods, checked_methods) do |expected_methods, checked_methods|
+        RSpec::Matchers::Matcher.new(:implement,
+          expected_methods,
+          checked_methods
+        ) do |expected_methods, checked_methods|
           unimplemented_methods = lambda {|doubled_class|
             implemented_methods = doubled_class.send(checked_methods)
-            expected_methods - implemented_methods.map(&:to_sym) # to_sym for non-1.9 compat
+            # to_sym for non-1.9 compat
+            expected_methods - implemented_methods.map(&:to_sym)
           }
 
           match do |doubled_class|
@@ -113,7 +122,8 @@ module RSpec
           end
 
           failure_message_for_should do |doubled_class|
-            implemented_methods   = Object.public_methods - doubled_class.send(checked_methods)
+            implemented_methods =
+              Object.public_methods - doubled_class.send(checked_methods)
             "%s does not implement:\n%s" % [
               doubled_class,
               unimplemented_methods[ doubled_class ].sort.map {|x|

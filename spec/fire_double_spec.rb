@@ -54,10 +54,15 @@ shared_examples_for 'a fire-enhanced double' do
 
     describe '#with' do
       it 'should delegate to RSpec #with method' do
-        doubled_object.should_receive(:defined_method_one_arg).with(1).and_return(:value)
+        doubled_object.
+          should_receive(:defined_method_one_arg).
+          with(1).
+          and_return(:value)
         doubled_object.defined_method_one_arg(1).should == :value
 
-        doubled_object.should_receive(:defined_method_one_arg).with(2) {|x| x + 1 }
+        doubled_object.
+          should_receive(:defined_method_one_arg).
+          with(2) {|x| x + 1 }
         doubled_object.defined_method_one_arg(2).should == 3
       end
 
@@ -100,7 +105,10 @@ shared_examples_for 'a fire-enhanced double' do
       end
 
       def fail_for_arguments(expected, actual)
-        fail_matching("Wrong number of arguments for defined_method", "Expected #{expected}, got #{actual}")
+        fail_matching(
+          "Wrong number of arguments for defined_method",
+          "Expected #{expected}, got #{actual}"
+        )
       end
     end
   end

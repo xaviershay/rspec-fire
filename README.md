@@ -23,13 +23,28 @@ Making your test doubles more resilient.
 
       -- Desert Way, Charlie Hunter
 
-Test doubles are sweet for isolating your unit tests, but we lost something in the translation from typed languages. Ruby doesn't have a compiler that can verify the contracts being mocked out are indeed legit. This hurts larger refactorings, since you can totally change a collaborator --- renaming methods, changing the number of arguments --- and all the mocks that were standing in for it will keep pretending everything is ok.
+Test doubles are sweet for isolating your unit tests, but we lost something in
+the translation from typed languages. Ruby doesn't have a compiler that can
+verify the contracts being mocked out are indeed legit. This hurts larger
+refactorings, since you can totally change a collaborator --- renaming methods,
+changing the number of arguments --- and all the mocks that were standing in
+for it will keep pretending everything is ok.
 
-`rspec-fire` mitigates that problem, with very little change to your existing coding style.
+`rspec-fire` mitigates that problem, with very little change to your existing
+coding style.
 
-One solution would be to disallow stubbing of methods that don't exist. This is what mocha does with its `Mocha::Configuration.prevent(:stubbing_non_existent_method)` option. The downside is, you now have to load the collaborators/dependencies that you are mocking, which kind of defeats the purpose of isolated testing. Not ideal.
+One solution would be to disallow stubbing of methods that don't exist. This is
+what mocha does with its
+`Mocha::Configuration.prevent(:stubbing_non_existent_method)` option. The
+downside is, you now have to load the collaborators/dependencies that you are
+mocking, which kind of defeats the purpose of isolated testing. Not ideal.
 
-Another solution, that `rspec-fire` adopts, is a more relaxed version that only checks that the methods exist _if the doubled class has already been loaded_. No checking will happen when running the spec in isolation, but when run in the context of the full app (either as a full spec run or by explicitly preloading collaborators on the command line) a failure will be triggered if an invalid method is being stubbed.
+Another solution, that `rspec-fire` adopts, is a more relaxed version that only
+checks that the methods exist _if the doubled class has already been loaded_.
+No checking will happen when running the spec in isolation, but when run in the
+context of the full app (either as a full spec run or by explicitly preloading
+collaborators on the command line) a failure will be triggered if an invalid
+method is being stubbed.
 
 Usage
 -----
@@ -62,38 +77,52 @@ Specify the class being doubled in your specs:
 
 Run your specs:
 
-    rspec spec/user_spec.rb                         # Isolated, will pass always
-    rspec -Ilib/email_notifier.rb spec/user_spec.rb # Will fail if EmailNotifier#notify method is not defined
+    # Isolated, will pass always
+    rspec spec/user_spec.rb
 
-Method presence/absence is checked, and if a `with` is provided then so is arity.
+    # Will fail if EmailNotifier#notify method is not defined
+    rspec -Ilib/email_notifier.rb spec/user_spec.rb
+
+Method presence/absence is checked, and if a `with` is provided then so is
+arity.
 
 Protips
 -------
 
 ### Using with an existing Rails project
 
-Create a new file `unit_helper.rb` that _does not_ require `spec_helper.rb`. Require this file where needed for isolated tests. To run an isolated spec in the context of your app:
+Create a new file `unit_helper.rb` that _does not_ require `spec_helper.rb`.
+Require this file where needed for isolated tests. To run an isolated spec in
+the context of your app:
 
     rspec -rspec/spec_helper.rb spec/unit/my_spec.rb
 
 ### Doubling class methods
 
-Particularly handy for `ActiveRecord` finders. Use `fire_class_double`. If you dig into the code, you'll find you can create subclasses of `FireDouble` to check for *any* set of methods.
+Particularly handy for `ActiveRecord` finders. Use `fire_class_double`. If you
+dig into the code, you'll find you can create subclasses of `FireDouble` to
+check for *any* set of methods.
 
 ### Mocking Done Right (tm)
 
 * Only mock methods on collaborators, _not_ the class under test.
 * Only mock public methods.
-* Extract common mock setup to keep your specs [DRY](http://en.wikipedia.org/wiki/DRY).
+* Extract common mock setup to keep your specs
+  [DRY](http://en.wikipedia.org/wiki/DRY).
 
-If you can't meet these criteria, your object is probably violating [SOLID](http://en.wikipedia.org/wiki/SOLID) principles and you should either refactor or use a non-isolated test.
+If you can't meet these criteria, your object is probably violating
+[SOLID](http://en.wikipedia.org/wiki/SOLID) principles and you should either
+refactor or use a non-isolated test.
 
 Compatibility
 -------------
 
 Only RSpec 2 is supported. Tested on all the rubies.
 
-[![Build Status](https://secure.travis-ci.org/xaviershay/rspec-fire.png)](http://travis-ci.org/xaviershay/rspec-fire)
+[![Build Status][build-image]][build-link]
+
+[build-image]: https://secure.travis-ci.org/xaviershay/rspec-fire.png
+[build-link]:  http://travis-ci.org/xaviershay/rspec-fire
 
 Developing
 ----------
@@ -102,7 +131,8 @@ Developing
     bundle install
     bundle exec rake spec
 
-Patches welcome! I won't merge anything that isn't spec'ed, but I can help you out with that if you are getting stuck.
+Patches welcome! I won't merge anything that isn't spec'ed, but I can help you
+out with that if you are getting stuck.
 
 Still need to support `#stub_chain`.
 
