@@ -38,7 +38,7 @@ shared_examples_for 'a fire-enhanced double' do
     it "should not allow #{method_name}" do
       lambda {
         doubled_object.send(method_under_test, method_name)
-      }.should fail_matching("#{method_name} does not implement", method_name)
+      }.should fail_matching("does not implement", method_name)
     end
   end
 

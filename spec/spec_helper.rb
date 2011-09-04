@@ -5,8 +5,8 @@ RSpec.configure do |config|
 
   def fail_matching(*messages)
     raise_error(RSpec::Expectations::ExpectationNotMetError) {|error|
-      messages.all? {|message|
-        error.message =~ /#{Regexp.escape(message)}/
+      messages.each {|message|
+        error.message.should =~ /#{Regexp.escape(message.to_s)}/
       }
     }
   end
