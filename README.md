@@ -107,8 +107,6 @@ check for *any* set of methods.
 
 * Only mock methods on collaborators, _not_ the class under test.
 * Only mock public methods.
-* Extract common mock setup to keep your specs
-  [DRY](http://en.wikipedia.org/wiki/DRY).
 
 If you can't meet these criteria, your object is probably violating
 [SOLID](http://en.wikipedia.org/wiki/SOLID) principles and you should either
