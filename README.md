@@ -117,11 +117,9 @@ refactor or use a non-isolated test.
 Compatibility
 -------------
 
-Only RSpec 2 is supported. Tested on all the rubies.
+Only RSpec 2 is supported. Tested on all the rubies thanks to [Travis
+CI][build-link].
 
-[![Build Status][build-image]][build-link]
-
-[build-image]: https://secure.travis-ci.org/xaviershay/rspec-fire.png
 [build-link]:  http://travis-ci.org/xaviershay/rspec-fire
 
 Developing
