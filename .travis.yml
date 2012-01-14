@@ -10,4 +10,4 @@ rvm:
 
 gemfile:
   - spec/gemfiles/rspec25
-  - spec/gemfiles/rspec26
+  - spec/gemfiles/rspec-latest
