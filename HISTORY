@@ -3,3 +3,6 @@
 
 0.2 - 3 September 2011
   * Checks method arity when a 'with' call is present
+
+0.2.1 - 14 January 2011
+  * rspec 2.8 support
