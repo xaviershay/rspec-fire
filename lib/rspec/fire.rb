@@ -18,6 +18,7 @@ module RSpec
     end
 
     class ShouldProxy < SimpleDelegator
+      extend RSpec::Matchers::DSL
       include RecursiveConstMethods
 
       AM = RSpec::Mocks::ArgumentMatchers
@@ -55,21 +56,20 @@ module RSpec
         end
       end
 
-      def have_arity(actual)
-        RSpec::Matchers::Matcher.new(:have_arity, actual) do |actual|
-          match do |method|
-            method.arity >= 0 && method.arity == actual
-          end
+      define :have_arity do |actual|
+        match do |method|
+          method.arity >= 0 && method.arity == actual
+        end
 
-          failure_message_for_should do |method|
-            "Wrong number of arguments for #{method.name}. " +
-              "Expected #{method.arity}, got #{actual}."
-          end
+        failure_message_for_should do |method|
+          "Wrong number of arguments for #{method.name}. " +
+            "Expected #{method.arity}, got #{actual}."
         end
       end
     end
 
     class FireDouble < RSpec::Mocks::Mock
+      extend RSpec::Matchers::DSL
       include RecursiveConstMethods
 
       def initialize(doubled_class, *args)
@@ -106,31 +106,26 @@ module RSpec
         end
       end
 
-      def implement(expected_methods, checked_methods)
-        RSpec::Matchers::Matcher.new(:implement,
-          expected_methods,
-          checked_methods
-        ) do |expected_methods, checked_methods|
-          unimplemented_methods = lambda {|doubled_class|
-            implemented_methods = doubled_class.send(checked_methods)
-            # to_sym for non-1.9 compat
-            expected_methods - implemented_methods.map(&:to_sym)
-          }
+      define :implement do |expected_methods, checked_methods|
+        unimplemented_methods = lambda {|doubled_class|
+          implemented_methods = doubled_class.send(checked_methods)
+          # to_sym for non-1.9 compat
+          expected_methods - implemented_methods.map(&:to_sym)
+        }
 
-          match do |doubled_class|
-            unimplemented_methods[ doubled_class ].empty?
-          end
+        match do |doubled_class|
+          unimplemented_methods[ doubled_class ].empty?
+        end
 
-          failure_message_for_should do |doubled_class|
-            implemented_methods =
-              Object.public_methods - doubled_class.send(checked_methods)
-            "%s does not implement:\n%s" % [
-              doubled_class,
-              unimplemented_methods[ doubled_class ].sort.map {|x|
-                "  #{x}"
-              }.join("\n")
-            ]
-          end
+        failure_message_for_should do |doubled_class|
+          implemented_methods =
+            Object.public_methods - doubled_class.send(checked_methods)
+          "%s does not implement:\n%s" % [
+            doubled_class,
+            unimplemented_methods[ doubled_class ].sort.map {|x|
+            "  #{x}"
+          }.join("\n")
+          ]
         end
       end
     end
