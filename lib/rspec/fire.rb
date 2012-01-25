@@ -1,4 +1,5 @@
 require 'rspec/mocks'
+require 'rspec/expectations'
 require 'delegate'
 
 module RSpec
