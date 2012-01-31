@@ -6,3 +6,6 @@
 
 0.2.1 - 14 January 2011
   * rspec 2.8 support
+
+0.2.2 - 31 January 2011
+  * Added missing require needed for some code bases.
