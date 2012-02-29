@@ -16,6 +16,11 @@ end
 
 class TestClass
   extend TestMethods
+
+  class Nested
+    class NestedEvenMore
+    end
+  end
 end
 
 shared_examples_for 'a fire-enhanced double method' do
@@ -135,3 +140,92 @@ describe '#fire_class_double' do
 
   it_should_behave_like 'a fire-enhanced double'
 end
+
+def reset_double(double)
+  double.rspec_reset
+  # manually remove it from the list that will be reset,
+  # so it doesn't get double-reste
+  ::RSpec::Mocks.space.send(:mocks).delete(double)
+end
+
+describe '#fire_replaced_class_double (for an existing class)' do
+  let(:doubled_object) { fire_replaced_class_double("TestClass") }
+  it_should_behave_like 'a fire-enhanced double'
+
+  it 'replaces the given constant with the double' do
+    orig_class = TestClass
+    double = doubled_object
+
+    TestClass.should be(double)
+    TestClass.should_not be(orig_class)
+  end
+
+  it 'returns the constant to its original value when reset' do
+    orig_class = TestClass
+    double = doubled_object
+    reset_double double
+
+    TestClass.should be(orig_class)
+    TestClass.should_not be(double)
+  end
+
+  it 'handles deep nesting' do
+    orig_class = TestClass::Nested::NestedEvenMore
+    double = fire_replaced_class_double("TestClass::Nested::NestedEvenMore")
+
+    TestClass::Nested::NestedEvenMore.should be(double)
+    TestClass::Nested::NestedEvenMore.should_not be(orig_class)
+
+    reset_double double
+
+    TestClass::Nested::NestedEvenMore.should_not be(double)
+    TestClass::Nested::NestedEvenMore.should be(orig_class)
+  end
+
+  it 'adds the double to rspec-mocks space so that it gets reset between examples' do
+    double = doubled_object
+    ::RSpec::Mocks.space.send(:mocks).should include(double)
+  end
+end
+
+describe '#fire_replaced_class_double (for a non-existant class)' do
+  it 'sets the constant' do
+    defined?(A::B::C).should be_false
+    double = fire_replaced_class_double("A::B::C")
+    A::B::C.should be(double)
+  end
+
+  it 'removes all generated constants' do
+    double = fire_replaced_class_double("A::B::C")
+    reset_double(double)
+    defined?(A::B::C).should be_false
+    defined?(A::B).should be_false
+    defined?(A).should be_false
+  end
+
+  it 'handles constants with some nestings that are set' do
+    defined?(TestClass::Nested).should be_true
+    defined?(TestClass::Nested::X::Y::Z).should be_false
+    double = fire_replaced_class_double("TestClass::Nested::X::Y::Z")
+    TestClass::Nested::X::Y::Z.should be(double)
+
+    reset_double(double)
+
+    defined?(TestClass::Nested::X::Y::Z).should be_false
+    defined?(TestClass::Nested::X::Y).should be_false
+    defined?(TestClass::Nested::X).should be_false
+    defined?(TestClass::Nested).should be_true
+  end
+
+  it 'allows any method to be mocked' do
+    double = fire_replaced_class_double("A::B::C")
+    double.should_receive(:foo).with("a").and_return(:bar)
+    A::B::C.foo("a").should eq(:bar)
+  end
+
+  it 'adds the double to rspec-mocks space so that it gets reset between examples' do
+    double = fire_replaced_class_double("A::B::C")
+    ::RSpec::Mocks.space.send(:mocks).should include(double)
+  end
+end
+

@@ -24,8 +24,8 @@ module RSpec
 
       AM = RSpec::Mocks::ArgumentMatchers
 
-      def initialize(doubled_class_name, method_finder, backing)
-        @doubled_class_name = doubled_class_name
+      def initialize(double, method_finder, backing)
+        @double             = double
         @method_finder      = method_finder
         @backing            = backing
         super(backing)
@@ -50,10 +50,8 @@ module RSpec
       protected
 
       def ensure_arity(actual)
-        if recursive_const_defined?(Object, @doubled_class_name)
-          recursive_const_get(Object, @doubled_class_name).
-            send(@method_finder, sym).
-            should have_arity(actual)
+        @double.with_doubled_class do |klass|
+          klass.send(@method_finder, sym).should have_arity(actual)
         end
       end
 
@@ -85,7 +83,7 @@ module RSpec
 
       def should_receive(method_name)
         ensure_implemented(method_name)
-        ShouldProxy.new(@__doubled_class_name, @__method_finder, super)
+        ShouldProxy.new(self, @__method_finder, super)
       end
 
       def should_not_receive(method_name)
@@ -98,12 +96,17 @@ module RSpec
         super
       end
 
+      def with_doubled_class
+        if recursive_const_defined?(Object, @__doubled_class_name)
+          yield recursive_const_get(Object, @__doubled_class_name)
+        end
+      end
+
       protected
 
       def ensure_implemented(*method_names)
-        if recursive_const_defined?(Object, @__doubled_class_name)
-          recursive_const_get(Object, @__doubled_class_name).
-            should implement(method_names, @__checked_methods)
+        with_doubled_class do |klass|
+          klass.should implement(method_names, @__checked_methods)
         end
       end
 
@@ -147,12 +150,72 @@ module RSpec
       end
     end
 
+    class FireReplacedClassDouble < FireClassDouble
+      def initialize(*args)
+        super
+
+        if recursive_const_defined?(Object, @__doubled_class_name)
+          __replace_defined_constant
+        else
+          __set_undefined_constant
+        end
+
+        ::RSpec::Mocks.space.add(self)
+      end
+
+      def with_doubled_class
+        yield @__orig_class if @__orig_class
+      end
+
+      def rspec_reset
+        super
+        @__resetter.call
+      end
+
+    private
+
+      def __replace_defined_constant
+        *context_parts, const_name = @__doubled_class_name.split('::')
+        context = recursive_const_get(Object, context_parts.join('::'))
+        @__orig_class = context.send(:remove_const, const_name)
+        context.const_set(const_name, self)
+
+        @__resetter = lambda do
+          context.send(:remove_const, const_name)
+          context.const_set(const_name, @__orig_class)
+        end
+      end
+
+      def __set_undefined_constant
+        @__orig_class = nil
+        *context_parts, const_name = @__doubled_class_name.split('::')
+
+        remaining_parts = context_parts.dup
+        deepest_defined_const = context_parts.inject(Object) do |klass, name|
+          break klass unless klass.const_defined?(name)
+          remaining_parts.shift
+          klass.const_get(name)
+        end
+
+        context = remaining_parts.inject(deepest_defined_const) do |klass, name|
+          klass.const_set(name, Module.new)
+        end
+
+        @__resetter = lambda { deepest_defined_const.send(:remove_const, remaining_parts.first) }
+        context.const_set(const_name, self)
+      end
+    end
+
     def fire_double(*args)
       FireObjectDouble.new(*args)
     end
 
     def fire_class_double(*args)
       FireClassDouble.new(*args)
+    end
+
+    def fire_replaced_class_double(*args)
+      FireReplacedClassDouble.new(*args)
     end
   end
 end
