@@ -201,7 +201,8 @@ module RSpec
           klass.const_set(name, Module.new)
         end
 
-        @__resetter = lambda { deepest_defined_const.send(:remove_const, remaining_parts.first) }
+        const_to_remove = remaining_parts.first || const_name
+        @__resetter = lambda { deepest_defined_const.send(:remove_const, const_to_remove) }
         context.const_set(const_name, self)
       end
     end

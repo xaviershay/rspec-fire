@@ -203,6 +203,14 @@ describe '#fire_replaced_class_double (for a non-existant class)' do
     defined?(A).should be_false
   end
 
+  it 'handles a single, unnested undefined constant' do
+    defined?(Goo).should be_false
+    double = fire_replaced_class_double("Goo")
+    Goo.should be(double)
+    reset_double(double)
+    defined?(Goo).should be_false
+  end
+
   it 'handles constants with some nestings that are set' do
     defined?(TestClass::Nested).should be_true
     defined?(TestClass::Nested::X::Y::Z).should be_false
