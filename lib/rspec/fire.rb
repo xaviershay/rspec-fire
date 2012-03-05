@@ -5,11 +5,11 @@ require 'delegate'
 module RSpec
   module Fire
     module RecursiveConstMethods
-      def recursive_const_get object, name
+      def recursive_const_get name
         name.split('::').inject(Object) {|klass,name| klass.const_get name }
       end
 
-      def recursive_const_defined? object, name
+      def recursive_const_defined? name
         !!name.split('::').inject(Object) {|klass,name|
           if klass && klass.const_defined?(name)
             klass.const_get name
@@ -97,8 +97,8 @@ module RSpec
       end
 
       def with_doubled_class
-        if recursive_const_defined?(Object, @__doubled_class_name)
-          yield recursive_const_get(Object, @__doubled_class_name)
+        if recursive_const_defined?(@__doubled_class_name)
+          yield recursive_const_get(@__doubled_class_name)
         end
       end
 
@@ -176,7 +176,7 @@ module RSpec
 
         def stub!
           *context_parts, @const_name = @full_constant_name.split('::')
-          @context = recursive_const_get(Object, context_parts.join('::'))
+          @context = recursive_const_get(context_parts.join('::'))
           @original_value = @context.send(:remove_const, @const_name)
           @context.const_set(@const_name, @stubbed_value)
         end
@@ -221,7 +221,7 @@ module RSpec
       end
 
       def self.stub!(constant_name, value)
-        stubber = if recursive_const_defined?(Object, constant_name)
+        stubber = if recursive_const_defined?(constant_name)
           DefinedConstantReplacer.new(constant_name, value)
         else
           UndefinedConstantSetter.new(constant_name, value)

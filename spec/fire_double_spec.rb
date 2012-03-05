@@ -172,7 +172,7 @@ shared_examples_for "loaded constant stubbing" do |const_name|
   include RSpec::Fire::RecursiveConstMethods
 
   define_method :const do
-    recursive_const_get(Object, const_name)
+    recursive_const_get(const_name)
   end
 
   it 'allows it to be stubbed' do
@@ -198,10 +198,10 @@ end
 
 shared_examples_for "unloaded constant stubbing" do |const_name|
   include RSpec::Fire::RecursiveConstMethods
-  before { recursive_const_defined?(Object, const_name).should be_false }
+  before { recursive_const_defined?(const_name).should be_false }
 
   define_method :const do
-    recursive_const_get(Object, const_name)
+    recursive_const_get(const_name)
   end
 
   it 'allows it to be stubbed' do
@@ -212,7 +212,7 @@ shared_examples_for "unloaded constant stubbing" do |const_name|
   it 'removes the constant when rspec clears its mocks' do
     stub_const(const_name, 7)
     reset_rspec_mocks
-    recursive_const_defined?(Object, const_name).should be_false
+    recursive_const_defined?(const_name).should be_false
   end
 
   it 'returns nil since it was not originally set' do
