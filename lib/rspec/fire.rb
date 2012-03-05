@@ -148,63 +148,93 @@ module RSpec
         @__checked_methods = :public_methods
         @__method_finder   = :method
       end
+
+      def as_replaced_constant
+        @__original_class = ConstantStubber.stub!(@__doubled_class_name, self)
+        extend AsReplacedConstant
+        self
+      end
+
+      module AsReplacedConstant
+        def with_doubled_class
+          yield @__original_class if @__original_class
+        end
+      end
     end
 
-    class FireReplacedClassDouble < FireClassDouble
-      def initialize(*args)
-        super
+    class ConstantStubber
+      extend RecursiveConstMethods
 
-        if recursive_const_defined?(Object, @__doubled_class_name)
-          __replace_defined_constant
+      class DefinedConstantReplacer
+        include RecursiveConstMethods
+        attr_reader :original_value
+
+        def initialize(full_constant_name, stubbed_value)
+          @full_constant_name = full_constant_name
+          @stubbed_value      = stubbed_value
+        end
+
+        def stub!
+          *context_parts, @const_name = @full_constant_name.split('::')
+          @context = recursive_const_get(Object, context_parts.join('::'))
+          @original_value = @context.send(:remove_const, @const_name)
+          @context.const_set(@const_name, @stubbed_value)
+        end
+
+        def rspec_reset
+          @context.send(:remove_const, @const_name)
+          @context.const_set(@const_name, @original_value)
+        end
+      end
+
+      class UndefinedConstantSetter
+        def initialize(full_constant_name, stubbed_value)
+          @full_constant_name = full_constant_name
+          @stubbed_value      = stubbed_value
+        end
+
+        def original_value
+          # always nil
+        end
+
+        def stub!
+          *context_parts, const_name = @full_constant_name.split('::')
+
+          remaining_parts = context_parts.dup
+          @deepest_defined_const = context_parts.inject(Object) do |klass, name|
+            break klass unless klass.const_defined?(name)
+            remaining_parts.shift
+            klass.const_get(name)
+          end
+
+          context = remaining_parts.inject(@deepest_defined_const) do |klass, name|
+            klass.const_set(name, Module.new)
+          end
+
+          @const_to_remove = remaining_parts.first || const_name
+          context.const_set(const_name, @stubbed_value)
+        end
+
+        def rspec_reset
+          @deepest_defined_const.send(:remove_const, @const_to_remove)
+        end
+      end
+
+      def self.stub!(constant_name, value)
+        stubber = if recursive_const_defined?(Object, constant_name)
+          DefinedConstantReplacer.new(constant_name, value)
         else
-          __set_undefined_constant
+          UndefinedConstantSetter.new(constant_name, value)
         end
 
-        ::RSpec::Mocks.space.add(self)
+        stubber.stub!
+        ::RSpec::Mocks.space.add(stubber)
+        stubber.original_value
       end
+    end
 
-      def with_doubled_class
-        yield @__orig_class if @__orig_class
-      end
-
-      def rspec_reset
-        super
-        @__resetter.call
-      end
-
-    private
-
-      def __replace_defined_constant
-        *context_parts, const_name = @__doubled_class_name.split('::')
-        context = recursive_const_get(Object, context_parts.join('::'))
-        @__orig_class = context.send(:remove_const, const_name)
-        context.const_set(const_name, self)
-
-        @__resetter = lambda do
-          context.send(:remove_const, const_name)
-          context.const_set(const_name, @__orig_class)
-        end
-      end
-
-      def __set_undefined_constant
-        @__orig_class = nil
-        *context_parts, const_name = @__doubled_class_name.split('::')
-
-        remaining_parts = context_parts.dup
-        deepest_defined_const = context_parts.inject(Object) do |klass, name|
-          break klass unless klass.const_defined?(name)
-          remaining_parts.shift
-          klass.const_get(name)
-        end
-
-        context = remaining_parts.inject(deepest_defined_const) do |klass, name|
-          klass.const_set(name, Module.new)
-        end
-
-        const_to_remove = remaining_parts.first || const_name
-        @__resetter = lambda { deepest_defined_const.send(:remove_const, const_to_remove) }
-        context.const_set(const_name, self)
-      end
+    def stub_const(name, value)
+      ConstantStubber.stub!(name, value)
     end
 
     def fire_double(*args)
@@ -216,7 +246,7 @@ module RSpec
     end
 
     def fire_replaced_class_double(*args)
-      FireReplacedClassDouble.new(*args)
+      FireClassDouble.new(*args).as_replaced_constant
     end
   end
 end
