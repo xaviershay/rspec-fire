@@ -15,7 +15,6 @@ class TestObject
 end
 
 class TestClass
-  VALUE = 7
   extend TestMethods
 
   class Nested
