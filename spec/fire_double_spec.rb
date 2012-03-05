@@ -325,7 +325,7 @@ describe "#stub_const" do
     it 'removes the first unloaded constant but leaves the loaded nested constant when rspec resets its mocks' do
       defined?(TestClass::Nested::NestedEvenMore).should be_true
       defined?(TestClass::Nested::NestedEvenMore::X).should be_false
-      stub_const("TestClass::Nested::NestedEvenMore", 7)
+      stub_const("TestClass::Nested::NestedEvenMore::X::Y::Z", 7)
       reset_rspec_mocks
       defined?(TestClass::Nested::NestedEvenMore).should be_true
       defined?(TestClass::Nested::NestedEvenMore::X).should be_false
