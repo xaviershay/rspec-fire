@@ -182,12 +182,16 @@ module RSpec
         end
 
         def rspec_reset
-          @context.send(:remove_const, @const_name)
-          @context.const_set(@const_name, @original_value)
+          if recursive_const_get(@full_constant_name).equal?(@stubbed_value)
+            @context.send(:remove_const, @const_name)
+            @context.const_set(@const_name, @original_value)
+          end
         end
       end
 
       class UndefinedConstantSetter
+        include RecursiveConstMethods
+
         def initialize(full_constant_name, stubbed_value)
           @full_constant_name = full_constant_name
           @stubbed_value      = stubbed_value
@@ -216,7 +220,9 @@ module RSpec
         end
 
         def rspec_reset
-          @deepest_defined_const.send(:remove_const, @const_to_remove)
+          if recursive_const_get(@full_constant_name).equal?(@stubbed_value)
+            @deepest_defined_const.send(:remove_const, @const_to_remove)
+          end
         end
       end
 

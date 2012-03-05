@@ -170,9 +170,24 @@ end
 
 shared_examples_for "loaded constant stubbing" do |const_name|
   include RSpec::Fire::RecursiveConstMethods
+  let!(:original_const_value) { const }
+  after { change_const_value_to(original_const_value) }
 
   define_method :const do
     recursive_const_get(const_name)
+  end
+
+  define_method :parent_const do
+    recursive_const_get("Object::" + const_name.sub(/(::)?[^:]+\z/, ''))
+  end
+
+  define_method :last_const_part do
+    const_name.split('::').last
+  end
+
+  def change_const_value_to(value)
+    parent_const.send(:remove_const, last_const_part)
+    parent_const.const_set(last_const_part, value)
   end
 
   it 'allows it to be stubbed' do
@@ -187,6 +202,13 @@ shared_examples_for "loaded constant stubbing" do |const_name|
     stub_const(const_name, :a)
     reset_rspec_mocks
     const.should be(original_value)
+  end
+
+  it 'does not reset the value to its original value when rspec clears its mocks if the example modifies the value of the constant' do
+    stub_const(const_name, :a)
+    change_const_value_to(new_const_value = Object.new)
+    reset_rspec_mocks
+    const.should be(new_const_value)
   end
 
   it 'returns the original value' do
@@ -204,6 +226,19 @@ shared_examples_for "unloaded constant stubbing" do |const_name|
     recursive_const_get(const_name)
   end
 
+  define_method :parent_const do
+    recursive_const_get("Object::" + const_name.sub(/(::)?[^:]+\z/, ''))
+  end
+
+  define_method :last_const_part do
+    const_name.split('::').last
+  end
+
+  def change_const_value_to(value)
+    parent_const.send(:remove_const, last_const_part)
+    parent_const.const_set(last_const_part, value)
+  end
+
   it 'allows it to be stubbed' do
     stub_const(const_name, 7)
     const.should eq(7)
@@ -213,6 +248,19 @@ shared_examples_for "unloaded constant stubbing" do |const_name|
     stub_const(const_name, 7)
     reset_rspec_mocks
     recursive_const_defined?(const_name).should be_false
+  end
+
+  it 'does not remove the constant when the example manually sets it' do
+    begin
+      stub_const(const_name, 7)
+      stubber = RSpec::Mocks.space.send(:mocks).first
+      change_const_value_to(new_const_value = Object.new)
+      reset_rspec_mocks
+      const.should equal(new_const_value)
+    ensure
+      change_const_value_to(7)
+      stubber.rspec_reset
+    end
   end
 
   it 'returns nil since it was not originally set' do
