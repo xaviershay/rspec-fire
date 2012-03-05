@@ -175,7 +175,8 @@ module RSpec
         end
 
         def stub!
-          *context_parts, @const_name = @full_constant_name.split('::')
+          context_parts = @full_constant_name.split('::')
+          @const_name = context_parts.pop
           @context = recursive_const_get(context_parts.join('::'))
           @original_value = @context.send(:remove_const, @const_name)
           @context.const_set(@const_name, @stubbed_value)
@@ -202,7 +203,8 @@ module RSpec
         end
 
         def stub!
-          *context_parts, const_name = @full_constant_name.split('::')
+          context_parts = @full_constant_name.split('::')
+          const_name = context_parts.pop
 
           remaining_parts = context_parts.dup
           @deepest_defined_const = context_parts.inject(Object) do |klass, name|
