@@ -63,6 +63,12 @@ Bit of setup in your `spec_helper.rb`:
 
 Specify the class being doubled in your specs:
 
+    class User < Struct.new(:notifier)
+      def suspend!
+        notifier.notify("suspended as")
+      end
+    end
+
     describe User, '#suspend!' do
       it 'sends a notification' do
         # Only this one line differs from how you write specs normally
@@ -96,6 +102,33 @@ Require this file where needed for isolated tests. To run an isolated spec in
 the context of your app:
 
     rspec -rspec/spec_helper.rb spec/unit/my_spec.rb
+
+### Doubling constants
+
+A particularly excellent feature. You can stub out constants using
+`fire_replaced_class_double`, removing the need to dependency inject
+collaborators (a technique that can sometimes be cumbersome).
+
+    class User
+      def suspend!
+        EmailNotifier.notify("suspended as")
+      end
+    end
+
+    describe User, '#suspend!' do
+      it 'sends a notification' do
+        # Only this one line differs from how you write specs normally
+        notifier = fire_replaced_class_double("EmailNotifier")
+
+        notifier.should_receive(:notify).with("suspended as")
+
+        user = User.new
+        user.suspend!
+      end
+    end
+
+This will probably become the default behaviour once we figure out a better
+name for it.
 
 ### Doubling class methods
 
