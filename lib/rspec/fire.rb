@@ -5,11 +5,11 @@ require 'delegate'
 module RSpec
   module Fire
     module RecursiveConstMethods
-      def recursive_const_get object, name
+      def recursive_const_get name
         name.split('::').inject(Object) {|klass,name| klass.const_get name }
       end
 
-      def recursive_const_defined? object, name
+      def recursive_const_defined? name
         !!name.split('::').inject(Object) {|klass,name|
           if klass && klass.const_defined?(name)
             klass.const_get name
@@ -24,8 +24,8 @@ module RSpec
 
       AM = RSpec::Mocks::ArgumentMatchers
 
-      def initialize(doubled_class_name, method_finder, backing)
-        @doubled_class_name = doubled_class_name
+      def initialize(double, method_finder, backing)
+        @double             = double
         @method_finder      = method_finder
         @backing            = backing
         super(backing)
@@ -50,10 +50,8 @@ module RSpec
       protected
 
       def ensure_arity(actual)
-        if recursive_const_defined?(Object, @doubled_class_name)
-          recursive_const_get(Object, @doubled_class_name).
-            send(@method_finder, sym).
-            should have_arity(actual)
+        @double.with_doubled_class do |klass|
+          klass.send(@method_finder, sym).should have_arity(actual)
         end
       end
 
@@ -85,7 +83,7 @@ module RSpec
 
       def should_receive(method_name)
         ensure_implemented(method_name)
-        ShouldProxy.new(@__doubled_class_name, @__method_finder, super)
+        ShouldProxy.new(self, @__method_finder, super)
       end
 
       def should_not_receive(method_name)
@@ -98,12 +96,17 @@ module RSpec
         super
       end
 
+      def with_doubled_class
+        if recursive_const_defined?(@__doubled_class_name)
+          yield recursive_const_get(@__doubled_class_name)
+        end
+      end
+
       protected
 
       def ensure_implemented(*method_names)
-        if recursive_const_defined?(Object, @__doubled_class_name)
-          recursive_const_get(Object, @__doubled_class_name).
-            should implement(method_names, @__checked_methods)
+        with_doubled_class do |klass|
+          klass.should implement(method_names, @__checked_methods)
         end
       end
 
@@ -145,6 +148,101 @@ module RSpec
         @__checked_methods = :public_methods
         @__method_finder   = :method
       end
+
+      def as_replaced_constant
+        @__original_class = ConstantStubber.stub!(@__doubled_class_name, self)
+        extend AsReplacedConstant
+        self
+      end
+
+      module AsReplacedConstant
+        def with_doubled_class
+          yield @__original_class if @__original_class
+        end
+      end
+    end
+
+    class ConstantStubber
+      extend RecursiveConstMethods
+
+      class DefinedConstantReplacer
+        include RecursiveConstMethods
+        attr_reader :original_value
+
+        def initialize(full_constant_name, stubbed_value)
+          @full_constant_name = full_constant_name
+          @stubbed_value      = stubbed_value
+        end
+
+        def stub!
+          context_parts = @full_constant_name.split('::')
+          @const_name = context_parts.pop
+          @context = recursive_const_get(context_parts.join('::'))
+          @original_value = @context.send(:remove_const, @const_name)
+          @context.const_set(@const_name, @stubbed_value)
+        end
+
+        def rspec_reset
+          if recursive_const_get(@full_constant_name).equal?(@stubbed_value)
+            @context.send(:remove_const, @const_name)
+            @context.const_set(@const_name, @original_value)
+          end
+        end
+      end
+
+      class UndefinedConstantSetter
+        include RecursiveConstMethods
+
+        def initialize(full_constant_name, stubbed_value)
+          @full_constant_name = full_constant_name
+          @stubbed_value      = stubbed_value
+        end
+
+        def original_value
+          # always nil
+        end
+
+        def stub!
+          context_parts = @full_constant_name.split('::')
+          const_name = context_parts.pop
+
+          remaining_parts = context_parts.dup
+          @deepest_defined_const = context_parts.inject(Object) do |klass, name|
+            break klass unless klass.const_defined?(name)
+            remaining_parts.shift
+            klass.const_get(name)
+          end
+
+          context = remaining_parts.inject(@deepest_defined_const) do |klass, name|
+            klass.const_set(name, Module.new)
+          end
+
+          @const_to_remove = remaining_parts.first || const_name
+          context.const_set(const_name, @stubbed_value)
+        end
+
+        def rspec_reset
+          if recursive_const_get(@full_constant_name).equal?(@stubbed_value)
+            @deepest_defined_const.send(:remove_const, @const_to_remove)
+          end
+        end
+      end
+
+      def self.stub!(constant_name, value)
+        stubber = if recursive_const_defined?(constant_name)
+          DefinedConstantReplacer.new(constant_name, value)
+        else
+          UndefinedConstantSetter.new(constant_name, value)
+        end
+
+        stubber.stub!
+        ::RSpec::Mocks.space.add(stubber)
+        stubber.original_value
+      end
+    end
+
+    def stub_const(name, value)
+      ConstantStubber.stub!(name, value)
     end
 
     def fire_double(*args)
@@ -153,6 +251,10 @@ module RSpec
 
     def fire_class_double(*args)
       FireClassDouble.new(*args)
+    end
+
+    def fire_replaced_class_double(*args)
+      FireClassDouble.new(*args).as_replaced_constant
     end
   end
 end

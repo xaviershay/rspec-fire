@@ -16,6 +16,11 @@ end
 
 class TestClass
   extend TestMethods
+
+  class Nested
+    class NestedEvenMore
+    end
+  end
 end
 
 shared_examples_for 'a fire-enhanced double method' do
@@ -134,4 +139,196 @@ describe '#fire_class_double' do
   let(:doubled_object) { fire_class_double("TestClass") }
 
   it_should_behave_like 'a fire-enhanced double'
+end
+
+def reset_rspec_mocks
+  ::RSpec::Mocks.space.reset_all
+end
+
+describe '#fire_replaced_class_double (for an existing class)' do
+  let(:doubled_object) { fire_replaced_class_double("TestClass") }
+
+  it_should_behave_like 'a fire-enhanced double'
+
+  it 'replaces the constant for the duration of the test' do
+    orig_class = TestClass
+    doubled_object.should_not be(orig_class)
+    TestClass.should be(doubled_object)
+    reset_rspec_mocks
+    TestClass.should be(orig_class)
+  end
+end
+
+describe '#fire_replaced_class_double (for a non-existant class)' do
+  it 'allows any method to be mocked' do
+    double = fire_replaced_class_double("A::B::C")
+    double.should_receive(:foo).with("a").and_return(:bar)
+    A::B::C.foo("a").should eq(:bar)
+  end
+end
+
+shared_examples_for "loaded constant stubbing" do |const_name|
+  include RSpec::Fire::RecursiveConstMethods
+  let!(:original_const_value) { const }
+  after { change_const_value_to(original_const_value) }
+
+  define_method :const do
+    recursive_const_get(const_name)
+  end
+
+  define_method :parent_const do
+    recursive_const_get("Object::" + const_name.sub(/(::)?[^:]+\z/, ''))
+  end
+
+  define_method :last_const_part do
+    const_name.split('::').last
+  end
+
+  def change_const_value_to(value)
+    parent_const.send(:remove_const, last_const_part)
+    parent_const.const_set(last_const_part, value)
+  end
+
+  it 'allows it to be stubbed' do
+    const.should_not eq(7)
+    stub_const(const_name, 7)
+    const.should eq(7)
+  end
+
+  it 'resets it to its original value when rspec clears its mocks' do
+    original_value = const
+    original_value.should_not eq(:a)
+    stub_const(const_name, :a)
+    reset_rspec_mocks
+    const.should be(original_value)
+  end
+
+  it 'does not reset the value to its original value when rspec clears its mocks if the example modifies the value of the constant' do
+    stub_const(const_name, :a)
+    change_const_value_to(new_const_value = Object.new)
+    reset_rspec_mocks
+    const.should be(new_const_value)
+  end
+
+  it 'returns the original value' do
+    orig_value = const
+    returned_value = stub_const(const_name, 7)
+    returned_value.should be(orig_value)
+  end
+end
+
+shared_examples_for "unloaded constant stubbing" do |const_name|
+  include RSpec::Fire::RecursiveConstMethods
+  before { recursive_const_defined?(const_name).should be_false }
+
+  define_method :const do
+    recursive_const_get(const_name)
+  end
+
+  define_method :parent_const do
+    recursive_const_get("Object::" + const_name.sub(/(::)?[^:]+\z/, ''))
+  end
+
+  define_method :last_const_part do
+    const_name.split('::').last
+  end
+
+  def change_const_value_to(value)
+    parent_const.send(:remove_const, last_const_part)
+    parent_const.const_set(last_const_part, value)
+  end
+
+  it 'allows it to be stubbed' do
+    stub_const(const_name, 7)
+    const.should eq(7)
+  end
+
+  it 'removes the constant when rspec clears its mocks' do
+    stub_const(const_name, 7)
+    reset_rspec_mocks
+    recursive_const_defined?(const_name).should be_false
+  end
+
+  it 'does not remove the constant when the example manually sets it' do
+    begin
+      stub_const(const_name, 7)
+      stubber = RSpec::Mocks.space.send(:mocks).first
+      change_const_value_to(new_const_value = Object.new)
+      reset_rspec_mocks
+      const.should equal(new_const_value)
+    ensure
+      change_const_value_to(7)
+      stubber.rspec_reset
+    end
+  end
+
+  it 'returns nil since it was not originally set' do
+    stub_const(const_name, 7).should be_nil
+  end
+end
+
+describe "#stub_const" do
+  context 'for a loaded unnested constant' do
+    it_behaves_like "loaded constant stubbing", "TestClass"
+  end
+
+  context 'for a loaded nested constant' do
+    it_behaves_like "loaded constant stubbing", "TestClass::Nested"
+  end
+
+  context 'for a loaded deeply nested constant' do
+    it_behaves_like "loaded constant stubbing", "TestClass::Nested::NestedEvenMore"
+  end
+
+  context 'for an unloaded unnested constant' do
+    it_behaves_like "unloaded constant stubbing", "X"
+  end
+
+  context 'for an unloaded nested constant' do
+    it_behaves_like "unloaded constant stubbing", "X::Y"
+
+    it 'removes the root constant when rspec clears its mocks' do
+      defined?(X).should be_false
+      stub_const("X::Y", 7)
+      reset_rspec_mocks
+      defined?(X).should be_false
+    end
+  end
+
+  context 'for an unloaded deeply nested constant' do
+    it_behaves_like "unloaded constant stubbing", "X::Y::Z"
+
+    it 'removes the root constant when rspec clears its mocks' do
+      defined?(X).should be_false
+      stub_const("X::Y::Z", 7)
+      reset_rspec_mocks
+      defined?(X).should be_false
+    end
+  end
+
+  context 'for an unloaded constant nested within a loaded constant' do
+    it_behaves_like "unloaded constant stubbing", "TestClass::X"
+
+    it 'removes the unloaded constant but leaves the loaded constant when rspec resets its mocks' do
+      defined?(TestClass).should be_true
+      defined?(TestClass::X).should be_false
+      stub_const("TestClass::X", 7)
+      reset_rspec_mocks
+      defined?(TestClass).should be_true
+      defined?(TestClass::X).should be_false
+    end
+  end
+
+  context 'for an unloaded constant nested deeply within a deeply nested loaded constant' do
+    it_behaves_like "unloaded constant stubbing", "TestClass::Nested::NestedEvenMore::X::Y::Z"
+
+    it 'removes the first unloaded constant but leaves the loaded nested constant when rspec resets its mocks' do
+      defined?(TestClass::Nested::NestedEvenMore).should be_true
+      defined?(TestClass::Nested::NestedEvenMore::X).should be_false
+      stub_const("TestClass::Nested::NestedEvenMore::X::Y::Z", 7)
+      reset_rspec_mocks
+      defined?(TestClass::Nested::NestedEvenMore).should be_true
+      defined?(TestClass::Nested::NestedEvenMore::X).should be_false
+    end
+  end
 end
