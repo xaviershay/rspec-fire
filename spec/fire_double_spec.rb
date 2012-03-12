@@ -139,6 +139,10 @@ describe '#fire_class_double' do
   let(:doubled_object) { fire_class_double("TestClass") }
 
   it_should_behave_like 'a fire-enhanced double'
+
+  it 'uses a module for the doubled object so that it supports nested constants like a real class' do
+    doubled_object.should be_a(Module)
+  end
 end
 
 def reset_rspec_mocks

@@ -67,19 +67,9 @@ module RSpec
       end
     end
 
-    class FireDouble < RSpec::Mocks::Mock
+    module FireDoublable
       extend RSpec::Matchers::DSL
       include RecursiveConstMethods
-
-      def initialize(doubled_class, *args)
-        args << {} unless Hash === args.last
-
-        @__doubled_class_name = doubled_class
-
-        # __declared_as copied from rspec/mocks definition of `double`
-        args.last[:__declared_as] = 'FireDouble'
-        super(doubled_class, *args)
-      end
 
       def should_receive(method_name)
         ensure_implemented(method_name)
@@ -134,25 +124,37 @@ module RSpec
       end
     end
 
-    class FireObjectDouble < FireDouble
-      def initialize(*args)
+    class FireObjectDouble < RSpec::Mocks::Mock
+      include FireDoublable
+
+      def initialize(doubled_class, *args)
+        args << {} unless Hash === args.last
+
+        @__doubled_class_name = doubled_class
+
+        # __declared_as copied from rspec/mocks definition of `double`
+        args.last[:__declared_as] = 'FireDouble'
         super
         @__checked_methods = :public_instance_methods
         @__method_finder   = :instance_method
       end
     end
 
-    class FireClassDouble < FireDouble
-      def initialize(*args)
-        super
-        @__checked_methods = :public_methods
-        @__method_finder   = :method
-      end
+    class FireClassDoubleBuilder
+      def self.build(doubled_class, *args)
+        Module.new do
+          extend FireDoublable
 
-      def as_replaced_constant
-        @__original_class = ConstantStubber.stub!(@__doubled_class_name, self)
-        extend AsReplacedConstant
-        self
+          @__doubled_class_name = doubled_class
+          @__checked_methods = :public_methods
+          @__method_finder   = :method
+
+          def self.as_replaced_constant
+            @__original_class = ConstantStubber.stub!(@__doubled_class_name, self)
+            extend AsReplacedConstant
+            self
+          end
+        end
       end
 
       module AsReplacedConstant
@@ -250,11 +252,11 @@ module RSpec
     end
 
     def fire_class_double(*args)
-      FireClassDouble.new(*args)
+      FireClassDoubleBuilder.build(*args)
     end
 
     def fire_replaced_class_double(*args)
-      FireClassDouble.new(*args).as_replaced_constant
+      fire_class_double(*args).as_replaced_constant
     end
   end
 end
