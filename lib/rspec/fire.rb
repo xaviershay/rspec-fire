@@ -28,6 +28,7 @@ module RSpec
         @double             = double
         @method_finder      = method_finder
         @backing            = backing
+        @sym = backing.respond_to?(:sym) ? @backing.sym : @backing.message
         super(backing)
       end
 
@@ -51,7 +52,7 @@ module RSpec
 
       def ensure_arity(actual)
         @double.with_doubled_class do |klass|
-          klass.send(@method_finder, sym).should have_arity(actual)
+          klass.send(@method_finder, @sym).should have_arity(actual)
         end
       end
 
