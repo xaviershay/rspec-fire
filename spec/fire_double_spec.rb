@@ -1,5 +1,7 @@
 require 'spec_helper'
 
+TOP_LEVEL_VALUE_CONST = 7
+
 module TestMethods
   def defined_method
     raise "Y U NO MOCK?"
@@ -16,6 +18,9 @@ end
 
 class TestClass
   extend TestMethods
+
+  M = :m
+  N = :n
 
   class Nested
     class NestedEvenMore
@@ -269,11 +274,77 @@ shared_examples_for "unloaded constant stubbing" do |const_name|
   it 'returns nil since it was not originally set' do
     stub_const(const_name, 7).should be_nil
   end
+
+  it 'ignores the :transfer_nested_constants if passed' do
+    stub = Module.new
+    stub_const(const_name, stub, :transfer_nested_constants => true)
+    stub.constants.should eq([])
+  end
 end
 
 describe "#stub_const" do
   context 'for a loaded unnested constant' do
     it_behaves_like "loaded constant stubbing", "TestClass"
+
+    it 'allows nested constants to be transferred to a stub module' do
+      tc_nested = TestClass::Nested
+      stub = Module.new
+      stub_const("TestClass", stub, :transfer_nested_constants => true)
+      stub::M.should eq(:m)
+      stub::N.should eq(:n)
+      stub::Nested.should be(tc_nested)
+    end
+
+    it 'allows nested constants to be selectively transferred to a stub module' do
+      stub = Module.new
+      stub_const("TestClass", stub, :transfer_nested_constants => [:M, :N])
+      stub::M.should eq(:m)
+      stub::N.should eq(:n)
+      defined?(stub::Nested).should be_false
+    end
+
+    it 'raises an error if asked to transfer nested constants but given an object that does not support them' do
+      original_tc = TestClass
+      stub = Object.new
+      expect {
+        stub_const("TestClass", stub, :transfer_nested_constants => true)
+      }.to raise_error(ArgumentError)
+
+      TestClass.should be(original_tc)
+
+      expect {
+        stub_const("TestClass", stub, :transfer_nested_constants => [:M])
+      }.to raise_error(ArgumentError)
+
+      TestClass.should be(original_tc)
+    end
+
+    it 'raises an error if asked to transfer nested constants on a constant that does not support nested constants' do
+      stub = Module.new
+      expect {
+        stub_const("TOP_LEVEL_VALUE_CONST", stub, :transfer_nested_constants => true)
+      }.to raise_error(ArgumentError)
+
+      TOP_LEVEL_VALUE_CONST.should eq(7)
+
+      expect {
+        stub_const("TOP_LEVEL_VALUE_CONST", stub, :transfer_nested_constants => [:M])
+      }.to raise_error(ArgumentError)
+
+      TOP_LEVEL_VALUE_CONST.should eq(7)
+    end
+
+    it 'raises an error if asked to transfer a nested constant that is not defined' do
+      original_tc = TestClass
+      defined?(TestClass::V).should be_false
+      stub = Module.new
+
+      expect {
+        stub_const("TestClass", stub, :transfer_nested_constants => [:V])
+      }.to raise_error(/cannot transfer nested constant.*V/i)
+
+      TestClass.should be(original_tc)
+    end
   end
 
   context 'for a loaded nested constant' do
