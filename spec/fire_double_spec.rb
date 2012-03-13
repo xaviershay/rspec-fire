@@ -166,6 +166,12 @@ describe '#fire_replaced_class_double (for an existing class)' do
     reset_rspec_mocks
     TestClass.should be(orig_class)
   end
+
+  it 'supports transferring nested constants to the double' do
+    fire_class_double("TestClass").as_replaced_constant(:transfer_nested_constants => true)
+    TestClass::M.should eq(:m)
+    TestClass::N.should eq(:n)
+  end
 end
 
 describe '#fire_replaced_class_double (for a non-existant class)' do

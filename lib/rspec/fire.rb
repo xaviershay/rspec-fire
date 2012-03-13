@@ -149,8 +149,8 @@ module RSpec
           @__checked_methods = :public_methods
           @__method_finder   = :method
 
-          def self.as_replaced_constant
-            @__original_class = ConstantStubber.stub!(@__doubled_class_name, self)
+          def self.as_replaced_constant(options = {})
+            @__original_class = ConstantStubber.stub!(@__doubled_class_name, self, options)
             extend AsReplacedConstant
             self
           end
