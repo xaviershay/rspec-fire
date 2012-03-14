@@ -159,6 +159,10 @@ module RSpec
           def self.to_s
             @__doubled_class_name + " (fire double)"
           end
+
+          def self.name
+            @__doubled_class_name
+          end
         end
       end
 

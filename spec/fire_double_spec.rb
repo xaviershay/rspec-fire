@@ -161,6 +161,11 @@ describe '#fire_class_double' do
     doubled_object.to_s.should include("TestClass (fire double)")
     doubled_object.inspect.should include("TestClass (fire double)")
   end
+
+  it 'assigns the class name' do
+    TestClass.name.should eq("TestClass")
+    doubled_object.name.should eq("TestClass")
+  end
 end
 
 def reset_rspec_mocks
