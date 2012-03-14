@@ -166,6 +166,12 @@ describe '#fire_class_double' do
     TestClass.name.should eq("TestClass")
     doubled_object.name.should eq("TestClass")
   end
+
+  it 'raises a mock expectation error for undefind methods' do
+    expect {
+      doubled_object.abc
+    }.to raise_error(RSpec::Mocks::MockExpectationError)
+  end
 end
 
 def reset_rspec_mocks

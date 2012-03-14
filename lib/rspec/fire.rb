@@ -163,6 +163,10 @@ module RSpec
           def self.name
             @__doubled_class_name
           end
+
+          def self.method_missing(name, *args)
+            __mock_proxy.raise_unexpected_message_error(name, *args)
+          end
         end
       end
 
