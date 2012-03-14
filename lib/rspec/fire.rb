@@ -155,6 +155,10 @@ module RSpec
             extend AsReplacedConstant
             self
           end
+
+          def self.to_s
+            @__doubled_class_name + " (fire double)"
+          end
         end
       end
 

@@ -156,6 +156,11 @@ describe '#fire_class_double' do
   it 'uses a module for the doubled object so that it supports nested constants like a real class' do
     doubled_object.should be_a(Module)
   end
+
+  it 'has a readable string representation' do
+    doubled_object.to_s.should include("TestClass (fire double)")
+    doubled_object.inspect.should include("TestClass (fire double)")
+  end
 end
 
 def reset_rspec_mocks
