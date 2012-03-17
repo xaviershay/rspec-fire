@@ -172,6 +172,12 @@ describe '#fire_class_double' do
       doubled_object.abc
     }.to raise_error(RSpec::Mocks::MockExpectationError)
   end
+
+  it 'allows stubs to be specified as a hash' do
+    double = fire_class_double("SomeClass", :a => 5, :b => 8)
+    double.a.should eq(5)
+    double.b.should eq(8)
+  end
 end
 
 def reset_rspec_mocks

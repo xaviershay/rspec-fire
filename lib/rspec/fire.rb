@@ -142,13 +142,17 @@ module RSpec
     end
 
     class FireClassDoubleBuilder
-      def self.build(doubled_class, *args)
+      def self.build(doubled_class, stubs = {})
         Module.new do
           extend FireDoublable
 
           @__doubled_class_name = doubled_class
           @__checked_methods = :public_methods
           @__method_finder   = :method
+
+          stubs.each do |message, response|
+            stub(message).and_return(response)
+          end
 
           def self.as_replaced_constant(options = {})
             @__original_class = ConstantStubber.stub!(@__doubled_class_name, self, options)
