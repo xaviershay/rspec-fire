@@ -1,5 +1,15 @@
 require 'spec_helper'
 
+TOP_LEVEL_VALUE_CONST = 7
+
+RSpec::Mocks::Space.class_eval do
+  # Deal with the fact that #mocks was renamed to #receivers for RSpec 2.9:
+  # https://github.com/rspec/rspec-mocks/commit/17c259ea5143d309e90ca6d53d40f6356ac2d0a5
+  unless private_instance_methods.include?(:receivers)
+    alias_method :receivers, :mocks
+  end
+end
+
 module TestMethods
   def defined_method
     raise "Y U NO MOCK?"
@@ -16,6 +26,9 @@ end
 
 class TestClass
   extend TestMethods
+
+  M = :m
+  N = :n
 
   class Nested
     class NestedEvenMore
@@ -139,6 +152,32 @@ describe '#fire_class_double' do
   let(:doubled_object) { fire_class_double("TestClass") }
 
   it_should_behave_like 'a fire-enhanced double'
+
+  it 'uses a module for the doubled object so that it supports nested constants like a real class' do
+    doubled_object.should be_a(Module)
+  end
+
+  it 'has a readable string representation' do
+    doubled_object.to_s.should include("TestClass (fire double)")
+    doubled_object.inspect.should include("TestClass (fire double)")
+  end
+
+  it 'assigns the class name' do
+    TestClass.name.should eq("TestClass")
+    doubled_object.name.should eq("TestClass")
+  end
+
+  it 'raises a mock expectation error for undefind methods' do
+    expect {
+      doubled_object.abc
+    }.to raise_error(RSpec::Mocks::MockExpectationError)
+  end
+
+  it 'allows stubs to be specified as a hash' do
+    double = fire_class_double("SomeClass", :a => 5, :b => 8)
+    double.a.should eq(5)
+    double.b.should eq(8)
+  end
 end
 
 def reset_rspec_mocks
@@ -156,6 +195,12 @@ describe '#fire_replaced_class_double (for an existing class)' do
     TestClass.should be(doubled_object)
     reset_rspec_mocks
     TestClass.should be(orig_class)
+  end
+
+  it 'supports transferring nested constants to the double' do
+    fire_class_double("TestClass").as_replaced_constant(:transfer_nested_constants => true)
+    TestClass::M.should eq(:m)
+    TestClass::N.should eq(:n)
   end
 end
 
@@ -252,7 +297,7 @@ shared_examples_for "unloaded constant stubbing" do |const_name|
   it 'does not remove the constant when the example manually sets it' do
     begin
       stub_const(const_name, 7)
-      stubber = RSpec::Mocks.space.send(:mocks).first
+      stubber = RSpec::Mocks.space.send(:receivers).first
       change_const_value_to(new_const_value = Object.new)
       reset_rspec_mocks
       const.should equal(new_const_value)
@@ -265,11 +310,77 @@ shared_examples_for "unloaded constant stubbing" do |const_name|
   it 'returns nil since it was not originally set' do
     stub_const(const_name, 7).should be_nil
   end
+
+  it 'ignores the :transfer_nested_constants if passed' do
+    stub = Module.new
+    stub_const(const_name, stub, :transfer_nested_constants => true)
+    stub.constants.should eq([])
+  end
 end
 
 describe "#stub_const" do
   context 'for a loaded unnested constant' do
     it_behaves_like "loaded constant stubbing", "TestClass"
+
+    it 'allows nested constants to be transferred to a stub module' do
+      tc_nested = TestClass::Nested
+      stub = Module.new
+      stub_const("TestClass", stub, :transfer_nested_constants => true)
+      stub::M.should eq(:m)
+      stub::N.should eq(:n)
+      stub::Nested.should be(tc_nested)
+    end
+
+    it 'allows nested constants to be selectively transferred to a stub module' do
+      stub = Module.new
+      stub_const("TestClass", stub, :transfer_nested_constants => [:M, :N])
+      stub::M.should eq(:m)
+      stub::N.should eq(:n)
+      defined?(stub::Nested).should be_false
+    end
+
+    it 'raises an error if asked to transfer nested constants but given an object that does not support them' do
+      original_tc = TestClass
+      stub = Object.new
+      expect {
+        stub_const("TestClass", stub, :transfer_nested_constants => true)
+      }.to raise_error(ArgumentError)
+
+      TestClass.should be(original_tc)
+
+      expect {
+        stub_const("TestClass", stub, :transfer_nested_constants => [:M])
+      }.to raise_error(ArgumentError)
+
+      TestClass.should be(original_tc)
+    end
+
+    it 'raises an error if asked to transfer nested constants on a constant that does not support nested constants' do
+      stub = Module.new
+      expect {
+        stub_const("TOP_LEVEL_VALUE_CONST", stub, :transfer_nested_constants => true)
+      }.to raise_error(ArgumentError)
+
+      TOP_LEVEL_VALUE_CONST.should eq(7)
+
+      expect {
+        stub_const("TOP_LEVEL_VALUE_CONST", stub, :transfer_nested_constants => [:M])
+      }.to raise_error(ArgumentError)
+
+      TOP_LEVEL_VALUE_CONST.should eq(7)
+    end
+
+    it 'raises an error if asked to transfer a nested constant that is not defined' do
+      original_tc = TestClass
+      defined?(TestClass::V).should be_false
+      stub = Module.new
+
+      expect {
+        stub_const("TestClass", stub, :transfer_nested_constants => [:V])
+      }.to raise_error(/cannot transfer nested constant.*V/i)
+
+      TestClass.should be(original_tc)
+    end
   end
 
   context 'for a loaded nested constant' do
