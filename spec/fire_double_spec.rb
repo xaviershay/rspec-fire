@@ -5,7 +5,7 @@ TOP_LEVEL_VALUE_CONST = 7
 RSpec::Mocks::Space.class_eval do
   # Deal with the fact that #mocks was renamed to #receivers for RSpec 2.9:
   # https://github.com/rspec/rspec-mocks/commit/17c259ea5143d309e90ca6d53d40f6356ac2d0a5
-  unless private_instance_methods.include?(:receivers)
+  unless private_instance_methods.map(&:to_sym).include?(:receivers)
     alias_method :receivers, :mocks
   end
 end

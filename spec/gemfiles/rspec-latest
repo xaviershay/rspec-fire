@@ -1,5 +1,5 @@
 source :rubygems
 
-gem 'rspec', '~> 2.9.0.rc2'
+gem 'rspec'
 
 gemspec :path => '../../'
