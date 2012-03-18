@@ -120,6 +120,9 @@ collaborators (a technique that can sometimes be cumbersome).
         # Only this one line differs from how you write specs normally
         notifier = fire_replaced_class_double("EmailNotifier")
 
+        # Alternately, you can use this fluent interface
+        notifier = fire_class_double("EmailNotifier").as_replaced_constant
+
         notifier.should_receive(:notify).with("suspended as")
 
         user = User.new
@@ -129,6 +132,51 @@ collaborators (a technique that can sometimes be cumbersome).
 
 This will probably become the default behaviour once we figure out a better
 name for it.
+
+### Stubbing Constants
+
+The constant stubbing logic used when doubling class constants can be
+used for any constant.
+
+    class MapReduceRunner
+      ITEMS_PER_BATCH = 1000
+    end
+
+    describe MapReduceRunner, "when it has too many items for one batch" do
+      it "breaks the items up into smaller batches" do
+        # the test would be really slow if we had to make more than 1000 items,
+        # so let's change the threshold for this one test.
+        stub_const("MapReduceRunner::ITEMS_PER_BATCH", 10)
+
+        MapReduceRunner.run_with(twenty_items)
+      end
+    end
+
+### Transferring nested constants to doubled constants
+
+When you use `fire_replaced_class_double` to replace a class or module
+that also acts as a namespace for other classes and constants, your
+access to these constants is cut off for the duration of the example
+(since the doubled constant does not automatically have all of the
+nested constants). The `:transfer_nested_constants` option is provided
+to deal with this:
+
+    module MyCoolGem
+      class Widget
+      end
+    end
+
+    # once you do this, you can no longer access MyCoolGem::Widget in your example...
+    fire_replaced_class_double("MyCoolGem")
+
+    # ...unless you tell rspec-fire to transfer all nested constants
+    fire_class_double("MyCoolGem").as_replaced_constant(:transfer_nested_constants => true)
+
+    # ...or give it a list of constants to transfer
+    fire_class_double("MyCoolGem").as_replaced_constant(:transfer_nested_constants => [:Widget])
+
+    # You can also use this when using #stub_const directly
+    stub_const("MyCoolGem", :transfer_nested_constants => true)
 
 ### Doubling class methods
 
