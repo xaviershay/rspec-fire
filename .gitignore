@@ -1,1 +1,2 @@
 *.gem
+spec/gemfiles/*.lock
