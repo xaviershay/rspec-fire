@@ -9,3 +9,6 @@
 
 0.2.2 - 31 January 2012
   * Added missing require needed for some code bases.
+
+0.3.0 - 17 March 2012
+  * Added support for doubling constants.
