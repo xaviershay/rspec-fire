@@ -1,5 +1,8 @@
 require 'spec_helper'
 
+def use; end
+private :use
+
 TOP_LEVEL_VALUE_CONST = 7
 
 RSpec::Mocks::Space.class_eval do
@@ -33,6 +36,10 @@ class TestClass
   class Nested
     class NestedEvenMore
     end
+  end
+
+  def self.use
+    raise "Y U NO MOCK?"
   end
 end
 
@@ -178,6 +185,16 @@ describe '#fire_class_double' do
     double.a.should eq(5)
     double.b.should eq(8)
   end
+
+  it 'allows private methods to be stubbed, just like on a normal test double (but unlike a partial mock)' do
+    mod = Module.new
+    mod.stub(:use)
+    expect { mod.use }.to raise_error(/private method `use' called/)
+
+    fire_double = fire_class_double("TestClass")
+    fire_double.stub(:use)
+    fire_double.use # should not raise an error
+  end if defined?(::RSpec::Mocks::TestDouble)
 end
 
 def reset_rspec_mocks
