@@ -443,3 +443,72 @@ describe "#stub_const" do
     end
   end
 end
+
+describe RSpec::Fire::SupportArityMatcher do
+  def support_arity(arity)
+    RSpec::Fire::SupportArityMatcher.new(arity)
+  end
+
+  context "a method with an exact arity" do
+    def two_args(a, b); end
+    def no_args; end
+
+    it 'passes when given the correct arity' do
+      method(:two_args).should support_arity(2)
+      method(:no_args).should support_arity(0)
+    end
+
+    it 'fails when given the wrong arity' do
+      expect {
+        method(:no_args).should support_arity(1)
+      }.to raise_error(/Expected 0, got 1/)
+
+      expect {
+        method(:two_args).should support_arity(1)
+      }.to raise_error(/Expected 2, got 1/)
+    end
+  end
+
+  context "a method with one required arg and two default args" do
+    def m(a, b=5, c=2); end
+
+    it 'passes when given 1 to 3 args' do
+      method(:m).should support_arity(1)
+      method(:m).should support_arity(2)
+      method(:m).should support_arity(3)
+    end
+
+    let(:can_distinguish_splat_from_defaults?) { method(:method).respond_to?(:parameters) }
+
+    it 'fails when given 0' do
+      pending("1.8 cannot distinguish default args from splats", :unless => can_distinguish_splat_from_defaults?) do
+        expect {
+          method(:m).should support_arity(0)
+        }.to raise_error(/Expected 1 to 3, got 0/)
+      end
+    end
+
+    it 'fails when given more than 3' do
+      pending("1.8 cannot distinguish default args from splats", :unless => can_distinguish_splat_from_defaults?) do
+        expect {
+          method(:m).should support_arity(4)
+        }.to raise_error(/Expected 1 to 3, got 4/)
+      end
+    end
+  end
+
+  context "a method with one required arg and a splat" do
+    def m(a, *b); end
+
+    it 'passes when given 1 or more' do
+      method(:m).should support_arity(1)
+      method(:m).should support_arity(20)
+    end
+
+    it 'fails when given 0' do
+      expect {
+        method(:m).should support_arity(0)
+      }.to raise_error(/Expected 1 or more, got 0/)
+    end
+  end
+end
