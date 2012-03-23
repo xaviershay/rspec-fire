@@ -150,6 +150,9 @@ module RSpec
           @__checked_methods = :public_methods
           @__method_finder   = :method
 
+          # TestDouble was added after rspec 2.9.0, and allows proper mocking
+          # of public methods that have clashing private methods. See spec for
+          # details.
           if defined?(::RSpec::Mocks::TestDouble)
             ::RSpec::Mocks::TestDouble.extend_onto self,
               doubled_class, stubs.merge(:__declared_as => "FireClassDouble")
