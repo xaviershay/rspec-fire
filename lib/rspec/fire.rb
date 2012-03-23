@@ -4,6 +4,57 @@ require 'delegate'
 
 module RSpec
   module Fire
+    class SupportArityMatcher
+      def initialize(arity)
+        @arity = arity
+      end
+
+      attr_reader :arity, :method
+
+      def matches?(method)
+        @method = method
+        min_arity <= arity && arity <= max_arity
+      end
+
+      def failure_message_for_should
+        "Wrong number of arguments for #{method.name}. " +
+          "Expected #{arity_description}, got #{arity}."
+      end
+
+    private
+
+      INFINITY = 1/0.0
+
+      if method(:method).respond_to?(:parameters)
+        def max_arity
+          params = method.parameters
+          return INFINITY if params.any? { |(type, name)| type == :rest } # splat
+          params.size
+        end
+      else
+        # On 1.8, Method#parameters does not exist.
+        # There's no way to distinguish between default and splat args, so
+        # there's no way to have it work correctly for both default and splat args,
+        # as far as I can tell.
+        # The best we can do is consider it INFINITY (to be tolerant of splat args).
+        def max_arity
+          method.arity < 0 ? INFINITY : method.arity
+        end
+      end
+
+      def min_arity
+        return method.arity if method.arity >= 0
+        # ~ inverts the one's complement and gives us the number of required args
+        ~method.arity
+      end
+
+      def arity_description
+        return min_arity if min_arity == max_arity
+        return "#{min_arity} or more" if max_arity == INFINITY
+        "#{min_arity} to #{max_arity}"
+      end
+    end
+
     module RecursiveConstMethods
       def recursive_const_get name
         name.split('::').inject(Object) {|klass,name| klass.const_get name }
@@ -19,7 +70,6 @@ module RSpec
     end
 
     class ShouldProxy < SimpleDelegator
-      extend RSpec::Matchers::DSL
       include RecursiveConstMethods
 
       AM = RSpec::Mocks::ArgumentMatchers
@@ -52,19 +102,12 @@ module RSpec
 
       def ensure_arity(actual)
         @double.with_doubled_class do |klass|
-          klass.send(@method_finder, @sym).should have_arity(actual)
+          klass.send(@method_finder, @sym).should support_arity(actual)
         end
       end
 
-      define :have_arity do |actual|
-        match do |method|
-          method.arity >= 0 && method.arity == actual
-        end
-
-        failure_message_for_should do |method|
-          "Wrong number of arguments for #{method.name}. " +
-            "Expected #{method.arity}, got #{actual}."
-        end
+      def support_arity(arity)
+        SupportArityMatcher.new(arity)
       end
     end
 
