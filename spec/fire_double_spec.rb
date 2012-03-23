@@ -153,6 +153,11 @@ describe '#fire_double' do
   let(:doubled_object) { fire_double("TestObject") }
 
   it_should_behave_like 'a fire-enhanced double'
+
+  it 'allows stubs to be passed as a hash' do
+    double = fire_double("TestObject", :defined_method => 17)
+    double.defined_method.should eq(17)
+  end
 end
 
 describe '#fire_class_double' do

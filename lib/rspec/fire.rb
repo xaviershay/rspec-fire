@@ -178,9 +178,11 @@ module RSpec
 
         # __declared_as copied from rspec/mocks definition of `double`
         args.last[:__declared_as] = 'FireDouble'
-        super
+
         @__checked_methods = :public_instance_methods
         @__method_finder   = :instance_method
+
+        super
       end
     end
 
