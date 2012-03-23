@@ -1,0 +1,6 @@
+source :rubygems
+
+gem 'rspec'
+gem 'rspec-mocks', :git => 'git://github.com/rspec/rspec-mocks.git'
+
+gemspec :path => '../../'
