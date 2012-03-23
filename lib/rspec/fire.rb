@@ -193,8 +193,20 @@ module RSpec
           @__checked_methods = :public_methods
           @__method_finder   = :method
 
-          stubs.each do |message, response|
-            stub(message).and_return(response)
+          # TestDouble was added after rspec 2.9.0, and allows proper mocking
+          # of public methods that have clashing private methods. See spec for
+          # details.
+          if defined?(::RSpec::Mocks::TestDouble)
+            ::RSpec::Mocks::TestDouble.extend_onto self,
+              doubled_class, stubs.merge(:__declared_as => "FireClassDouble")
+          else
+            stubs.each do |message, response|
+              stub(message).and_return(response)
+            end
+
+            def self.method_missing(name, *args)
+              __mock_proxy.raise_unexpected_message_error(name, *args)
+            end
           end
 
           def self.as_replaced_constant(options = {})
@@ -213,10 +225,6 @@ module RSpec
 
           def self.name
             @__doubled_class_name
-          end
-
-          def self.method_missing(name, *args)
-            __mock_proxy.raise_unexpected_message_error(name, *args)
           end
         end
       end
