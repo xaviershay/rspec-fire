@@ -56,20 +56,26 @@ shared_examples_for 'a fire-enhanced double method' do
 end
 
 shared_examples_for 'a fire-enhanced double' do
-  def self.should_allow(method_name)
-    it "should allow #{method_name}" do
+  def self.should_allow(method_parameters)
+    method_to_stub = method_parameters.is_a?(Hash) ?
+      method_parameters.keys.first : method_parameters
+
+    it "should allow #{method_to_stub}" do
       lambda {
-        doubled_object.send(method_under_test, method_name)
+        doubled_object.send(method_under_test, method_parameters)
       }.should_not raise_error
       doubled_object.rspec_reset
     end
   end
 
-  def self.should_not_allow(method_name)
-    it "should not allow #{method_name}" do
+  def self.should_not_allow(method_parameters)
+    method_to_stub = method_parameters.is_a?(Hash) ?
+      method_parameters.keys.first : method_parameters
+
+    it "should not allow #{method_to_stub}" do
       lambda {
-        doubled_object.send(method_under_test, method_name)
-      }.should fail_matching("does not implement", method_name)
+        doubled_object.send(method_under_test, method_parameters)
+      }.should fail_matching("does not implement", method_to_stub)
     end
   end
 
@@ -146,6 +152,18 @@ shared_examples_for 'a fire-enhanced double' do
   describe '#stub' do
     let(:method_under_test) { :stub }
     it_should_behave_like 'a fire-enhanced double method'
+
+    context "RSpec's hash shortcut syntax" do
+      context 'doubled class is not loaded' do
+        let(:doubled_object) { fire_double("UnloadedObject") }
+        should_allow(:undefined_method => 123)
+      end
+
+      context 'doubled class is loaded' do
+        should_allow(:defined_method => 456)
+        should_not_allow(:undefined_method => 789)
+      end
+    end
   end
 end
 
