@@ -126,7 +126,7 @@ module RSpec
       end
 
       def stub(method_name)
-        ensure_implemented(method_name)
+        ensure_implemented(method_name) unless method_name.is_a?(Hash)
         super
       end
 
