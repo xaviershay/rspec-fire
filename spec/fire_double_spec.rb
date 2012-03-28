@@ -380,6 +380,16 @@ describe "#stub_const" do
   context 'for a loaded unnested constant' do
     it_behaves_like "loaded constant stubbing", "TestClass"
 
+    it 'can be stubbed multiple times but still restores the original value properly' do
+      orig_value = TestClass
+      stub1, stub2 = Module.new, Module.new
+      stub_const("TestClass", stub1)
+      stub_const("TestClass", stub2)
+
+      reset_rspec_mocks
+      TestClass.should be(orig_value)
+    end
+
     it 'allows nested constants to be transferred to a stub module' do
       tc_nested = TestClass::Nested
       stub = Module.new

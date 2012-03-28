@@ -373,7 +373,12 @@ module RSpec
 
       def self.rspec_reset
         @registered_with_rspec_mocks = false
-        stubbers.each { |s| s.rspec_reset }
+
+        # We use reverse order so that if the same constant
+        # was stubbed multiple times, the original value gets
+        # properly restored.
+        stubbers.reverse.each { |s| s.rspec_reset }
+
         stubbers.clear
       end
 
