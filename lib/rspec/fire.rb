@@ -131,7 +131,9 @@ module RSpec
       end
 
       def with_doubled_class
-        if recursive_const_defined?(@__doubled_class_name)
+        if original_stubbed_const_value = ConstantStubber.original_value_for(@__doubled_class_name)
+          yield original_stubbed_const_value
+        elsif recursive_const_defined?(@__doubled_class_name)
           yield recursive_const_get(@__doubled_class_name)
         end
       end
@@ -243,7 +245,7 @@ module RSpec
 
       class DefinedConstantReplacer
         include RecursiveConstMethods
-        attr_reader :original_value
+        attr_reader :original_value, :full_constant_name
 
         def initialize(full_constant_name, stubbed_value, transfer_nested_constants)
           @full_constant_name        = full_constant_name
@@ -312,6 +314,8 @@ module RSpec
       class UndefinedConstantSetter
         include RecursiveConstMethods
 
+        attr_reader :full_constant_name
+
         def initialize(full_constant_name, stubbed_value)
           @full_constant_name = full_constant_name
           @stubbed_value      = stubbed_value
@@ -354,9 +358,32 @@ module RSpec
           UndefinedConstantSetter.new(constant_name, value)
         end
 
+        stubbers << stubber
+
         stubber.stub!
-        ::RSpec::Mocks.space.add(stubber)
+        ensure_registered_with_rspec_mocks
         stubber.original_value
+      end
+
+      def self.ensure_registered_with_rspec_mocks
+        return if @registered_with_rspec_mocks
+        ::RSpec::Mocks.space.add(self)
+        @registered_with_rspec_mocks = true
+      end
+
+      def self.rspec_reset
+        @registered_with_rspec_mocks = false
+        stubbers.each { |s| s.rspec_reset }
+        stubbers.clear
+      end
+
+      def self.stubbers
+        @stubbers ||= []
+      end
+
+      def self.original_value_for(constant_name)
+        stubber = stubbers.find { |s| s.full_constant_name == constant_name }
+        stubber.original_value if stubber
       end
     end
 

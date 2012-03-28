@@ -5,14 +5,6 @@ private :use
 
 TOP_LEVEL_VALUE_CONST = 7
 
-RSpec::Mocks::Space.class_eval do
-  # Deal with the fact that #mocks was renamed to #receivers for RSpec 2.9:
-  # https://github.com/rspec/rspec-mocks/commit/17c259ea5143d309e90ca6d53d40f6356ac2d0a5
-  unless private_instance_methods.map(&:to_sym).include?(:receivers)
-    alias_method :receivers, :mocks
-  end
-end
-
 module TestMethods
   def defined_method
     raise "Y U NO MOCK?"
@@ -28,6 +20,7 @@ class TestObject
 end
 
 class TestClass
+  include TestMethods
   extend TestMethods
 
   M = :m
@@ -242,6 +235,31 @@ describe '#fire_replaced_class_double (for an existing class)' do
     TestClass::M.should eq(:m)
     TestClass::N.should eq(:n)
   end
+
+  def use_doubles(class_double, instance_double)
+    instance_double.should_receive(:defined_method).and_return(3)
+    class_double.should_receive(:defined_method).and_return(4)
+
+    instance_double.defined_method.should eq(3)
+    class_double.defined_method.should eq(4)
+
+    expect { instance_double.should_receive(:undefined_method) }.to fail_matching("does not implement")
+    expect { class_double.should_receive(:undefined_method) }.to fail_matching("does not implement")
+  end
+
+  it 'can be used after a declared fire_double for the same class' do
+    instance_double = fire_double("TestClass")
+    class_double = fire_replaced_class_double("TestClass")
+
+    use_doubles class_double, instance_double
+  end
+
+  it 'can be used before a declared fire_double for the same class' do
+    class_double = fire_replaced_class_double("TestClass")
+    instance_double = fire_double("TestClass")
+
+    use_doubles class_double, instance_double
+  end
 end
 
 describe '#fire_replaced_class_double (for a non-existant class)' do
@@ -337,7 +355,7 @@ shared_examples_for "unloaded constant stubbing" do |const_name|
   it 'does not remove the constant when the example manually sets it' do
     begin
       stub_const(const_name, 7)
-      stubber = RSpec::Mocks.space.send(:receivers).first
+      stubber = RSpec::Fire::ConstantStubber.stubbers.first
       change_const_value_to(new_const_value = Object.new)
       reset_rspec_mocks
       const.should equal(new_const_value)
