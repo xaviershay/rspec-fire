@@ -129,6 +129,7 @@ module RSpec
         ensure_implemented(method_name) unless method_name.is_a?(Hash)
         super
       end
+      alias stub! stub
 
       def with_doubled_class
         if recursive_const_defined?(@__doubled_class_name)
