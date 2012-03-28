@@ -29,7 +29,7 @@ module RSpec
         def max_arity
           params = method.parameters
           return INFINITY if params.any? { |(type, name)| type == :rest } # splat
-          params.size
+          params.count { |(type, name)| type != :block }
         end
       else
         # On 1.8, Method#parameters does not exist.
