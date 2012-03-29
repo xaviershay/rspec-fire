@@ -130,6 +130,10 @@ module RSpec
         super
       end
 
+      def stub!(method_name)
+        stub(method_name)
+      end
+
       def with_doubled_class
         if recursive_const_defined?(@__doubled_class_name)
           yield recursive_const_get(@__doubled_class_name)
