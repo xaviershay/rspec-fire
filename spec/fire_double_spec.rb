@@ -553,4 +553,18 @@ describe RSpec::Fire::SupportArityMatcher do
       }.to raise_error(/Expected 1 or more, got 0/)
     end
   end
+
+  context "a method with an explicit block arg" do
+    def m(a, &b); end
+
+    it 'passes when given 1' do
+      method(:m).should support_arity(1)
+    end
+
+    it 'fails when given 2' do
+      expect {
+        method(:m).should support_arity(2)
+      }.to raise_error(/Expected 1, got 2/)
+    end
+  end
 end
