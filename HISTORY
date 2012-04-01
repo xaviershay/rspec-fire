@@ -12,3 +12,11 @@
 
 0.3.0 - 17 March 2012
   * Added support for doubling constants.
+
+0.4.0 - 1 April 2012
+  * Handle default args and splats correctly.
+  * rspec-mocks 2.9-master support.
+  * Allow `fire_double("Class", :foo => 17)` syntax.
+  * Allow `mock.stub(:foo => 17)` syntax.
+  * Don't count block params when determining max arity.
+  * Restore original const value when a const is stubbed more than once.
