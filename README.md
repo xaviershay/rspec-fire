@@ -101,7 +101,7 @@ Create a new file `unit_helper.rb` that _does not_ require `spec_helper.rb`.
 Require this file where needed for isolated tests. To run an isolated spec in
 the context of your app:
 
-    rspec -rspec/spec_helper.rb spec/unit/my_spec.rb
+    rspec -r./spec/spec_helper.rb spec/unit/my_spec.rb
 
 ### Doubling constants
 
