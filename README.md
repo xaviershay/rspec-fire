@@ -103,6 +103,17 @@ the context of your app:
 
     rspec -r./spec/spec_helper.rb spec/unit/my_spec.rb
 
+### Using with ActiveRecord
+
+ActiveRecord methods defined implicitly from database columns are not detected.
+A workaround is to explicitly define the methods you are mocking:
+
+    class User < ActiveRecord::Base
+      # Explicit column definitions for rspec-fire
+      def name; super; end
+      def email; super; end
+    end
+
 ### Doubling constants
 
 A particularly excellent feature. You can stub out constants using
