@@ -135,9 +135,12 @@ module RSpec
       end
 
       def with_doubled_class
-        if original_stubbed_const_value = ConstantStubber.original_value_for(@__doubled_class_name)
-          yield original_stubbed_const_value
-        elsif recursive_const_defined?(@__doubled_class_name)
+        ConstantStubber.find_original_value_for(@__doubled_class_name) do |value|
+          yield value if value
+          return
+        end
+
+        if recursive_const_defined?(@__doubled_class_name)
           yield recursive_const_get(@__doubled_class_name)
         end
       end
@@ -390,9 +393,10 @@ module RSpec
         @stubbers ||= []
       end
 
-      def self.original_value_for(constant_name)
+      def self.find_original_value_for(constant_name)
         stubber = stubbers.find { |s| s.full_constant_name == constant_name }
-        stubber.original_value if stubber
+        yield stubber.original_value if stubber
+        self
       end
     end
 

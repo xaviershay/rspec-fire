@@ -270,6 +270,28 @@ describe '#fire_replaced_class_double (for a non-existant class)' do
     double.should_receive(:foo).with("a").and_return(:bar)
     A::B::C.foo("a").should eq(:bar)
   end
+
+  def use_doubles(class_double, instance_double)
+    instance_double.should_receive(:undefined_method).and_return(3)
+    class_double.should_receive(:undefined_method).and_return(4)
+
+    instance_double.undefined_method.should eq(3)
+    class_double.undefined_method.should eq(4)
+  end
+
+  it 'can be used after a declared fire_double for the same class' do
+    instance_double = fire_double("A::B::C")
+    class_double = fire_replaced_class_double("A::B::C")
+
+    use_doubles class_double, instance_double
+  end
+
+  it 'can be used before a declared fire_double for the same class' do
+    class_double = fire_replaced_class_double("A::B::C")
+    instance_double = fire_double("A::B::C")
+
+    use_doubles class_double, instance_double
+  end
 end
 
 shared_examples_for "loaded constant stubbing" do |const_name|
