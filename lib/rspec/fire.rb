@@ -147,16 +147,18 @@ module RSpec
 
       protected
 
+      # This cache gives a decent speed up when a class is doubled a lot.
       def implemented_methods(doubled_class, checked_methods)
         @@_implemented_methods_cache ||= {}
+
+        # to_sym for non-1.9 compat
         @@_implemented_methods_cache[[doubled_class, checked_methods]] ||=
-          doubled_class.send(checked_methods)
+          doubled_class.send(checked_methods).map(&:to_sym)
       end
 
       def unimplemented_methods(doubled_class, expected_methods, checked_methods)
-        # to_sym for non-1.9 compat
         expected_methods -
-          implemented_methods(doubled_class, checked_methods).map(&:to_sym)
+          implemented_methods(doubled_class, checked_methods)
       end
 
       def ensure_implemented(*method_names)
