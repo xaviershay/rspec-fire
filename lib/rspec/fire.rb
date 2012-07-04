@@ -147,11 +147,14 @@ module RSpec
 
       protected
 
-      def unimplemented_methods(doubled_class, expected_methods, checked_methods)
-        implemented_methods = doubled_class.send(checked_methods)
+      def implemented_methods(doubled_class, checked_methods)
+        doubled_class.send(checked_methods)
+      end
 
+      def unimplemented_methods(doubled_class, expected_methods, checked_methods)
         # to_sym for non-1.9 compat
-        expected_methods - implemented_methods.map(&:to_sym)
+        expected_methods -
+          implemented_methods(doubled_class, checked_methods).map(&:to_sym)
       end
 
       def ensure_implemented(*method_names)
@@ -164,7 +167,8 @@ module RSpec
 
           if methods.any?
             implemented_methods =
-              Object.public_methods - doubled_class.send(@__checked_methods)
+              Object.public_methods -
+                implemented_methods(doubled_class, @__checked_methods)
 
             msg = "%s does not implement:\n%s" % [
               doubled_class,
