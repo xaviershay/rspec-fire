@@ -148,7 +148,9 @@ module RSpec
       protected
 
       def implemented_methods(doubled_class, checked_methods)
-        doubled_class.send(checked_methods)
+        @@_implemented_methods_cache ||= {}
+        @@_implemented_methods_cache[[doubled_class, checked_methods]] ||=
+          doubled_class.send(checked_methods)
       end
 
       def unimplemented_methods(doubled_class, expected_methods, checked_methods)
