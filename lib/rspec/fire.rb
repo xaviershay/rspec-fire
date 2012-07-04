@@ -147,32 +147,41 @@ module RSpec
 
       protected
 
-      def ensure_implemented(*method_names)
-        with_doubled_class do |klass|
-          klass.should implement(method_names, @__checked_methods)
-        end
+      # This cache gives a decent speed up when a class is doubled a lot.
+      def implemented_methods(doubled_class, checked_methods)
+        @@_implemented_methods_cache ||= {}
+
+        # to_sym for non-1.9 compat
+        @@_implemented_methods_cache[[doubled_class, checked_methods]] ||=
+          doubled_class.send(checked_methods).map(&:to_sym)
       end
 
-      define :implement do |expected_methods, checked_methods|
-        unimplemented_methods = lambda {|doubled_class|
-          implemented_methods = doubled_class.send(checked_methods)
-          # to_sym for non-1.9 compat
-          expected_methods - implemented_methods.map(&:to_sym)
-        }
+      def unimplemented_methods(doubled_class, expected_methods, checked_methods)
+        expected_methods -
+          implemented_methods(doubled_class, checked_methods)
+      end
 
-        match do |doubled_class|
-          unimplemented_methods[ doubled_class ].empty?
-        end
-
-        failure_message_for_should do |doubled_class|
-          implemented_methods =
-            Object.public_methods - doubled_class.send(checked_methods)
-          "%s does not implement:\n%s" % [
+      def ensure_implemented(*method_names)
+        with_doubled_class do |doubled_class|
+          methods = unimplemented_methods(
             doubled_class,
-            unimplemented_methods[ doubled_class ].sort.map {|x|
-            "  #{x}"
-          }.join("\n")
-          ]
+            method_names,
+            @__checked_methods
+          )
+
+          if methods.any?
+            implemented_methods =
+              Object.public_methods -
+                implemented_methods(doubled_class, @__checked_methods)
+
+            msg = "%s does not implement:\n%s" % [
+              doubled_class,
+              methods.sort.map {|x|
+                "  #{x}"
+              }.join("\n")
+            ]
+            raise RSpec::Expectations::ExpectationNotMetError, msg
+          end
         end
       end
     end
