@@ -8,6 +8,5 @@ rvm:
   - ruby-head
 
 gemfile:
-  - spec/gemfiles/rspec25
   - spec/gemfiles/rspec-latest
   - spec/gemfiles/rspec-master
