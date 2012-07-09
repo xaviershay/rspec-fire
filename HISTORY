@@ -24,3 +24,7 @@
 0.5.0 - 4 July 2012
   * Performance improvements, overhead is now roughly 10% down from 100%
   * Allow both instance and class doubles for unloaded classes.
+
+1.0.0 - 9 July 2012
+  * RSpec 2.11 compatibility, no longer compatible with earlier versions.
+  * Removed `stub_const`, it is now in `rspec-mocks`.
