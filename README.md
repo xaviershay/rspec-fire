@@ -144,25 +144,6 @@ collaborators (a technique that can sometimes be cumbersome).
 This will probably become the default behaviour once we figure out a better
 name for it.
 
-### Stubbing Constants
-
-The constant stubbing logic used when doubling class constants can be
-used for any constant.
-
-    class MapReduceRunner
-      ITEMS_PER_BATCH = 1000
-    end
-
-    describe MapReduceRunner, "when it has too many items for one batch" do
-      it "breaks the items up into smaller batches" do
-        # the test would be really slow if we had to make more than 1000 items,
-        # so let's change the threshold for this one test.
-        stub_const("MapReduceRunner::ITEMS_PER_BATCH", 10)
-
-        MapReduceRunner.run_with(twenty_items)
-      end
-    end
-
 ### Transferring nested constants to doubled constants
 
 When you use `fire_replaced_class_double` to replace a class or module
@@ -186,9 +167,6 @@ to deal with this:
     # ...or give it a list of constants to transfer
     fire_class_double("MyCoolGem").as_replaced_constant(:transfer_nested_constants => [:Widget])
 
-    # You can also use this when using #stub_const directly
-    stub_const("MyCoolGem", :transfer_nested_constants => true)
-
 ### Doubling class methods
 
 Particularly handy for `ActiveRecord` finders. Use `fire_class_double`. If you
@@ -207,7 +185,7 @@ refactor or use a non-isolated test.
 Compatibility
 -------------
 
-Only RSpec 2 is supported. Tested on all the rubies thanks to [Travis
+Only RSpec 2.11+ is supported. Tested on all the rubies thanks to [Travis
 CI][build-link].
 
 [build-link]:  http://travis-ci.org/xaviershay/rspec-fire
