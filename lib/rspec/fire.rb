@@ -4,6 +4,26 @@ require 'delegate'
 
 module RSpec
   module Fire
+    class Configuration
+      attr_accessor :verify_constant_names
+      alias verify_constant_names? verify_constant_names
+
+      def initialize
+        self.verify_constant_names = false
+      end
+    end
+
+    def self.configuration
+      @configuration ||= Configuration.new
+    end
+
+    def self.configure
+      yield configuration
+    end
+
+    Error = Class.new(StandardError)
+    UndefinedConstantError = Class.new(Error)
+
     class SupportArityMatcher
       def initialize(arity)
         @arity = arity
@@ -179,10 +199,17 @@ module RSpec
               methods.sort.map {|x|
                 "  #{x}"
               }.join("\n")
+
             ]
             raise RSpec::Expectations::ExpectationNotMetError, msg
           end
         end
+      end
+
+      def verify_constant_name
+        return if recursive_const_defined?(@__doubled_class_name)
+
+        raise UndefinedConstantError, "#{@__doubled_class_name} is not a defined constant."
       end
     end
 
@@ -193,6 +220,7 @@ module RSpec
         args << {} unless Hash === args.last
 
         @__doubled_class_name = doubled_class
+        verify_constant_name if RSpec::Fire.configuration.verify_constant_names?
 
         # __declared_as copied from rspec/mocks definition of `double`
         args.last[:__declared_as] = 'FireDouble'
@@ -212,6 +240,8 @@ module RSpec
           @__doubled_class_name = doubled_class
           @__checked_methods = :public_methods
           @__method_finder   = :method
+
+          verify_constant_name if RSpec::Fire.configuration.verify_constant_names?
 
           # TestDouble was added after rspec 2.9.0, and allows proper mocking
           # of public methods that have clashing private methods. See spec for
