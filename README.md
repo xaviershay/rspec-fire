@@ -173,6 +173,22 @@ Particularly handy for `ActiveRecord` finders. Use `fire_class_double`. If you
 dig into the code, you'll find you can create subclasses of `FireDouble` to
 check for *any* set of methods.
 
+### Preventing Typo'd Constant Names
+
+`fire_double("MyClas")` will not verify any mocked methods, even when
+`MyClass` is loaded, because of the typo in the constant name. There's
+an option to help prevent these sorts of fat-finger errors:
+
+    RSpec::Fire.configure do |config|
+      config.verify_constant_names = true
+    end
+
+When this is set to true, rspec-fire will raise an error when given
+the name of an undefined constant. You probably only want to set this
+when running your entire test suite, with all production code loaded.
+Setting this for an isolated unit test will prevent you from being
+able to isolate it!
+
 ### Mocking Done Right (tm)
 
 * Only mock methods on collaborators, _not_ the class under test.
