@@ -29,6 +29,31 @@ class TestClass
   end
 end
 
+shared_examples_for "verifying named constants" do |double_method|
+  def clear_config
+    RSpec::Fire.instance_variable_set(:@configuration, nil)
+  end
+
+  before(:each) { clear_config }
+  after(:all)   { clear_config }
+
+  it "allows mispelled constants by default" do
+    double = send(double_method, "TestClas")
+    double.should_receive(:undefined_method)
+    double.undefined_method
+  end
+
+  it "raises an error when constants are mispelled and the appropriate config option is set" do
+    RSpec::Fire.configure do |c|
+      c.verify_constant_names = true
+    end
+
+    expect {
+      send(double_method, "TestClas")
+    }.to raise_error(/TestClas is not a defined constant/)
+  end
+end
+
 shared_examples_for 'a fire-enhanced double method' do
   describe 'doubled class is not loaded' do
     let(:doubled_object) { fire_double("UnloadedObject") }
@@ -159,6 +184,7 @@ describe '#fire_double' do
   let(:doubled_object) { fire_double("TestObject") }
 
   it_should_behave_like 'a fire-enhanced double'
+  it_should_behave_like "verifying named constants", :fire_double
 
   it 'allows stubs to be passed as a hash' do
     double = fire_double("TestObject", :defined_method => 17)
@@ -170,6 +196,7 @@ describe '#fire_class_double' do
   let(:doubled_object) { fire_class_double("TestClass") }
 
   it_should_behave_like 'a fire-enhanced double'
+  it_should_behave_like "verifying named constants", :fire_class_double
 
   it 'uses a module for the doubled object so that it supports nested constants like a real class' do
     doubled_object.should be_a(Module)
