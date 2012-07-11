@@ -28,3 +28,6 @@
 1.0.0 - 9 July 2012
   * RSpec 2.11 compatibility, no longer compatible with earlier versions.
   * Removed `stub_const`, it is now in `rspec-mocks`.
+
+1.1.0 - 10 July 2012
+  * Add `verify_constant_names` option.
