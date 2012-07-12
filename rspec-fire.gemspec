@@ -6,6 +6,7 @@ Gem::Specification.new do |s|
   s.authors  = ["Xavier Shay"]
   s.email    = ["hello@xaviershay.com"]
   s.homepage = "http://github.com/xaviershay/rspec-fire"
+  s.license  = "MIT"
   s.has_rdoc = false
 
   s.require_path = 'lib'
