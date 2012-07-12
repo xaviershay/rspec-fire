@@ -55,39 +55,45 @@ It's a gem!
 
 Bit of setup in your `spec_helper.rb`:
 
-    require 'rspec/fire'
+```ruby
+require 'rspec/fire'
 
-    RSpec.configure do |config|
-      config.include(RSpec::Fire)
-    end
+RSpec.configure do |config|
+  config.include(RSpec::Fire)
+end
+```
 
 Specify the class being doubled in your specs:
 
-    class User < Struct.new(:notifier)
-      def suspend!
-        notifier.notify("suspended as")
-      end
-    end
+```ruby
+class User < Struct.new(:notifier)
+  def suspend!
+    notifier.notify("suspended as")
+  end
+end
 
-    describe User, '#suspend!' do
-      it 'sends a notification' do
-        # Only this one line differs from how you write specs normally
-        notifier = fire_double("EmailNotifier")
+describe User, '#suspend!' do
+  it 'sends a notification' do
+    # Only this one line differs from how you write specs normally
+    notifier = fire_double("EmailNotifier")
 
-        notifier.should_receive(:notify).with("suspended as")
+    notifier.should_receive(:notify).with("suspended as")
 
-        user = User.new(notifier)
-        user.suspend!
-      end
-    end
+    user = User.new(notifier)
+    user.suspend!
+  end
+end
+```
 
 Run your specs:
 
-    # Isolated, will pass always
-    rspec spec/user_spec.rb
+```ruby
+# Isolated, will pass always
+rspec spec/user_spec.rb
 
-    # Will fail if EmailNotifier#notify method is not defined
-    rspec -Ilib/email_notifier.rb spec/user_spec.rb
+# Will fail if EmailNotifier#notify method is not defined
+rspec -Ilib/email_notifier.rb spec/user_spec.rb
+```
 
 Method presence/absence is checked, and if a `with` is provided then so is
 arity.
@@ -108,11 +114,13 @@ the context of your app:
 ActiveRecord methods defined implicitly from database columns are not detected.
 A workaround is to explicitly define the methods you are mocking:
 
-    class User < ActiveRecord::Base
-      # Explicit column definitions for rspec-fire
-      def name; super; end
-      def email; super; end
-    end
+```ruby
+class User < ActiveRecord::Base
+  # Explicit column definitions for rspec-fire
+  def name; super; end
+  def email; super; end
+end
+```
 
 ### Doubling constants
 
@@ -120,26 +128,28 @@ A particularly excellent feature. You can stub out constants using
 `fire_replaced_class_double`, removing the need to dependency inject
 collaborators (a technique that can sometimes be cumbersome).
 
-    class User
-      def suspend!
-        EmailNotifier.notify("suspended as")
-      end
-    end
+```ruby
+class User
+  def suspend!
+    EmailNotifier.notify("suspended as")
+  end
+end
 
-    describe User, '#suspend!' do
-      it 'sends a notification' do
-        # Only this one line differs from how you write specs normally
-        notifier = fire_replaced_class_double("EmailNotifier")
+describe User, '#suspend!' do
+  it 'sends a notification' do
+    # Only this one line differs from how you write specs normally
+    notifier = fire_replaced_class_double("EmailNotifier")
 
-        # Alternately, you can use this fluent interface
-        notifier = fire_class_double("EmailNotifier").as_replaced_constant
+    # Alternately, you can use this fluent interface
+    notifier = fire_class_double("EmailNotifier").as_replaced_constant
 
-        notifier.should_receive(:notify).with("suspended as")
+    notifier.should_receive(:notify).with("suspended as")
 
-        user = User.new
-        user.suspend!
-      end
-    end
+    user = User.new
+    user.suspend!
+  end
+end
+```
 
 This will probably become the default behaviour once we figure out a better
 name for it.
@@ -153,19 +163,21 @@ access to these constants is cut off for the duration of the example
 nested constants). The `:transfer_nested_constants` option is provided
 to deal with this:
 
-    module MyCoolGem
-      class Widget
-      end
-    end
+```ruby
+module MyCoolGem
+  class Widget
+  end
+end
 
-    # once you do this, you can no longer access MyCoolGem::Widget in your example...
-    fire_replaced_class_double("MyCoolGem")
+# once you do this, you can no longer access MyCoolGem::Widget in your example...
+fire_replaced_class_double("MyCoolGem")
 
-    # ...unless you tell rspec-fire to transfer all nested constants
-    fire_class_double("MyCoolGem").as_replaced_constant(:transfer_nested_constants => true)
+# ...unless you tell rspec-fire to transfer all nested constants
+fire_class_double("MyCoolGem").as_replaced_constant(:transfer_nested_constants => true)
 
-    # ...or give it a list of constants to transfer
-    fire_class_double("MyCoolGem").as_replaced_constant(:transfer_nested_constants => [:Widget])
+# ...or give it a list of constants to transfer
+fire_class_double("MyCoolGem").as_replaced_constant(:transfer_nested_constants => [:Widget])
+```
 
 ### Doubling class methods
 
@@ -179,9 +191,11 @@ check for *any* set of methods.
 `MyClass` is loaded, because of the typo in the constant name. There's
 an option to help prevent these sorts of fat-finger errors:
 
-    RSpec::Fire.configure do |config|
-      config.verify_constant_names = true
-    end
+```ruby
+RSpec::Fire.configure do |config|
+  config.verify_constant_names = true
+end
+```
 
 When this is set to true, rspec-fire will raise an error when given
 the name of an undefined constant. You probably only want to set this
