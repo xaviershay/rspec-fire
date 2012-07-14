@@ -177,7 +177,7 @@ module RSpec
       end
 
       def unimplemented_methods(doubled_class, expected_methods, checked_methods)
-        expected_methods -
+        expected_methods.map(&:to_sym) -
           implemented_methods(doubled_class, checked_methods)
       end
 
