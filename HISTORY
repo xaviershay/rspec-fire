@@ -31,3 +31,7 @@
 
 1.1.0 - 10 July 2012
   * Add `verify_constant_names` option.
+
+1.1.1 - 14 July 2012
+  * Add MIT licence.
+  * Handles string as well as symbol method names.
