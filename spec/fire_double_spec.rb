@@ -58,11 +58,14 @@ shared_examples_for 'a fire-enhanced double method' do
   describe 'doubled class is not loaded' do
     let(:doubled_object) { fire_double("UnloadedObject") }
     should_allow(:undefined_method)
+    should_allow('undefined_method')
   end
 
   describe 'doubled class is loaded' do
     should_allow(:defined_method)
+    should_allow('defined_method')
     should_not_allow(:undefined_method)
+    should_not_allow('undefined_method')
   end
 end
 
