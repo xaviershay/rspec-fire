@@ -243,21 +243,8 @@ module RSpec
 
           verify_constant_name if RSpec::Fire.configuration.verify_constant_names?
 
-          # TestDouble was added after rspec 2.9.0, and allows proper mocking
-          # of public methods that have clashing private methods. See spec for
-          # details.
-          if defined?(::RSpec::Mocks::TestDouble)
-            ::RSpec::Mocks::TestDouble.extend_onto self,
-              doubled_class, stubs.merge(:__declared_as => "FireClassDouble")
-          else
-            stubs.each do |message, response|
-              stub(message).and_return(response)
-            end
-
-            def self.method_missing(name, *args)
-              __mock_proxy.raise_unexpected_message_error(name, *args)
-            end
-          end
+          ::RSpec::Mocks::TestDouble.extend_onto self,
+            doubled_class, stubs.merge(:__declared_as => "FireClassDouble")
 
           def self.as_replaced_constant(options = {})
             RSpec::Mocks::ConstantStubber.stub(@__doubled_class_name, self, options)
