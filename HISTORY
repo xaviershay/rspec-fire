@@ -35,3 +35,6 @@
 1.1.1 - 14 July 2012
   * Add MIT licence.
   * Handles string as well as symbol method names.
+
+1.1.2 - 10 August 2012
+  * Fix use of `const_{get,defined?}` to handle undefined consts like A::Hash.
