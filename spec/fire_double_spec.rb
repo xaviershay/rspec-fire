@@ -193,6 +193,12 @@ describe '#fire_double' do
     double = fire_double("TestObject", :defined_method => 17)
     double.defined_method.should eq(17)
   end
+
+  it 'does not prevent stubbing methods on an unloaded nested constant with a name that matches a top-level constant' do
+    double = fire_double("TestObject::Hash")
+    double.stub(:foo).and_return("bar")
+    double.foo.should eq("bar")
+  end
 end
 
 describe '#fire_class_double' do
