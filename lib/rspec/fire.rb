@@ -76,14 +76,53 @@ module RSpec
     end
 
     module RecursiveConstMethods
+      # We only want to consider constants that are defined directly on a
+      # particular module, and not include top-level/inherited constants.
+      # Unfortunately, the constant API changed between 1.8 and 1.9, so
+      # we need to conditionally define methods to ignore the top-level/inherited
+      # constants.
+      #
+      # Given `class A; end`:
+      #
+      # On 1.8:
+      #   - A.const_get("Hash") # => ::Hash
+      #   - A.const_defined?("Hash") # => false
+      #   - Neither method accepts the extra `inherit` argument
+      # On 1.9:
+      #   - A.const_get("Hash") # => ::Hash
+      #   - A.const_defined?("Hash") # => true
+      #   - A.const_get("Hash", false) # => raises NameError
+      #   - A.const_defined?("Hash", false) # => false
+      if Module.method(:const_defined?).arity == 1
+        def const_defined_on?(mod, const_name)
+          mod.const_defined?(const_name)
+        end
+
+        def get_const_defined_on(mod, const_name)
+          if const_defined_on?(mod, const_name)
+            return mod.const_get(const_name)
+          end
+
+          raise NameError, "uninitialized constant #{mod.name}::#{const_name}"
+        end
+      else
+        def const_defined_on?(mod, const_name)
+          mod.const_defined?(const_name, false)
+        end
+
+        def get_const_defined_on(mod, const_name)
+          mod.const_get(const_name, false)
+        end
+      end
+
       def recursive_const_get name
-        name.split('::').inject(Object) {|klass,name| klass.const_get name }
+        name.split('::').inject(Object) {|klass,name| get_const_defined_on(klass, name) }
       end
 
       def recursive_const_defined? name
         !!name.split('::').inject(Object) {|klass,name|
-          if klass && klass.const_defined?(name)
-            klass.const_get name
+          if klass && const_defined_on?(klass, name)
+            get_const_defined_on(klass, name)
           end
         }
       end
