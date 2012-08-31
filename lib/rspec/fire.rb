@@ -161,7 +161,7 @@ module RSpec
 
       def ensure_arity(actual)
         @double.with_doubled_class do |klass|
-          klass.send(@method_finder, @sym).should support_arity(actual)
+          klass.__send__(@method_finder, @sym).should support_arity(actual)
         end
       end
 
@@ -212,7 +212,7 @@ module RSpec
 
         # to_sym for non-1.9 compat
         @@_implemented_methods_cache[[doubled_class, checked_methods]] ||=
-          doubled_class.send(checked_methods).map(&:to_sym)
+          doubled_class.__send__(checked_methods).map(&:to_sym)
       end
 
       def unimplemented_methods(doubled_class, expected_methods, checked_methods)

@@ -27,6 +27,10 @@ class TestClass
   def self.use
     raise "Y U NO MOCK?"
   end
+
+  def self.send
+    # fake out
+  end
 end
 
 shared_examples_for "verifying named constants" do |double_method|
