@@ -38,3 +38,6 @@
 
 1.1.2 - 10 August 2012
   * Fix use of `const_{get,defined?}` to handle undefined consts like A::Hash.
+
+1.1.3 - 3 September 2012
+  * Use __send__ in case classes have overriden it. (#25)
