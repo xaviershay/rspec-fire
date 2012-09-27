@@ -271,39 +271,43 @@ module RSpec
       end
     end
 
-    class FireClassDoubleBuilder
-      def self.build(doubled_class, stubs = {})
-        Module.new do
-          extend FireDoublable
+    class FireClassDouble < Module
+      include FireDoublable
 
-          @__doubled_class_name = doubled_class
-          @__checked_methods = :public_methods
-          @__method_finder   = :method
+      def initialize(doubled_class, stubs = {})
+        @__doubled_class_name = doubled_class
+        @__checked_methods = :public_methods
+        @__method_finder   = :method
 
-          verify_constant_name if RSpec::Fire.configuration.verify_constant_names?
+        verify_constant_name if RSpec::Fire.configuration.verify_constant_names?
 
-          ::RSpec::Mocks::TestDouble.extend_onto self,
-            doubled_class, stubs.merge(:__declared_as => "FireClassDouble")
+        ::RSpec::Mocks::TestDouble.extend_onto self,
+          doubled_class, stubs.merge(:__declared_as => "FireClassDouble")
 
-          def self.as_replaced_constant(options = {})
-            RSpec::Mocks::ConstantStubber.stub(@__doubled_class_name, self, options)
-            @__original_class = RSpec::Mocks::Constant.original(@__doubled_class_name).original_value
+        # This needs to come after `::RSpec::Mocks::TestDouble.extend_onto`
+        # so that it gets precedence...
+        extend StringRepresentations
+      end
 
-            extend AsReplacedConstant
-            self
-          end
+      def as_replaced_constant(options = {})
+        RSpec::Mocks::ConstantStubber.stub(@__doubled_class_name, self, options)
+        @__original_class = RSpec::Mocks::Constant.original(@__doubled_class_name).original_value
 
-          def self.to_s
-            @__doubled_class_name + " (fire double)"
-          end
+        extend AsReplacedConstant
+        self
+      end
 
-          def self.inspect
-            to_s
-          end
+      def name
+        @__doubled_class_name
+      end
 
-          def self.name
-            @__doubled_class_name
-          end
+      module StringRepresentations
+        def to_s
+          @__doubled_class_name + " (fire double)"
+        end
+
+        def inspect
+          to_s
         end
       end
 
@@ -324,7 +328,7 @@ module RSpec
     end
 
     def fire_class_double(*args)
-      FireClassDoubleBuilder.build(*args)
+      FireClassDouble.new(*args)
     end
 
     def fire_replaced_class_double(*args)
