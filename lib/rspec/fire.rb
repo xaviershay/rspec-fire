@@ -175,7 +175,6 @@ module RSpec
     end
 
     module FireDoublable
-      extend RSpec::Matchers::DSL
       include RecursiveConstMethods
 
       def should_receive(method_name)
