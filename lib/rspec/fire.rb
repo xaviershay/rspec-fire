@@ -159,9 +159,13 @@ module RSpec
 
       protected
 
+      def expect(value)
+        ::RSpec::Expectations::ExpectationTarget.new(value)
+      end
+
       def ensure_arity(actual)
         @double.with_doubled_class do |klass|
-          klass.__send__(@method_finder, @sym).should support_arity(actual)
+          expect(klass.__send__(@method_finder, @sym)).to support_arity(actual)
         end
       end
 

@@ -203,6 +203,24 @@ describe '#fire_double' do
     double.stub(:foo).and_return("bar")
     double.foo.should eq("bar")
   end
+
+  def with_isolated_syntax_change
+    original_syntax = ::RSpec::Matchers.configuration.syntax
+    yield
+  ensure
+    ::RSpec::Matchers.configuration.syntax = original_syntax
+  end
+
+  it 'works when the `should` syntax is disabled' do
+    with_isolated_syntax_change do
+      ::RSpec::Matchers.configuration.syntax = :expect
+      expect(5).not_to respond_to(:should, :should_not)
+
+      double = fire_double("TestObject")
+      double.should_receive(:defined_method_one_arg).with(8)
+      double.defined_method_one_arg(8)
+    end
+  end
 end
 
 describe '#fire_class_double' do
