@@ -87,7 +87,7 @@ Run your specs:
     rspec spec/user_spec.rb
 
     # Will fail if EmailNotifier#notify method is not defined
-    rspec -Ilib/email_notifier.rb spec/user_spec.rb
+    rspec -Ilib -remail_notifier.rb spec/user_spec.rb
 
 Method presence/absence is checked, and if a `with` is provided then so is
 arity.
