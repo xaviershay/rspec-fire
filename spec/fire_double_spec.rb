@@ -60,7 +60,7 @@ end
 
 shared_examples_for 'a fire-enhanced double method' do
   describe 'doubled class is not loaded' do
-    let(:doubled_object) { fire_double("UnloadedObject") }
+    let(:doubled_object) { instance_double("UnloadedObject") }
     should_allow(:undefined_method)
     should_allow('undefined_method')
   end
@@ -174,7 +174,7 @@ shared_examples_for 'a fire-enhanced double' do
 
       context "RSpec's hash shortcut syntax" do
         context 'doubled class is not loaded' do
-          let(:doubled_object) { fire_double("UnloadedObject") }
+          let(:doubled_object) { instance_double("UnloadedObject") }
           should_allow(:undefined_method => 123)
         end
 
@@ -187,19 +187,19 @@ shared_examples_for 'a fire-enhanced double' do
   end
 end
 
-describe '#fire_double' do
-  let(:doubled_object) { fire_double("TestObject") }
+describe '#instance_double' do
+  let(:doubled_object) { instance_double("TestObject") }
 
   it_should_behave_like 'a fire-enhanced double'
-  it_should_behave_like "verifying named constants", :fire_double
+  it_should_behave_like "verifying named constants", :instance_double
 
   it 'allows stubs to be passed as a hash' do
-    double = fire_double("TestObject", :defined_method => 17)
+    double = instance_double("TestObject", :defined_method => 17)
     double.defined_method.should eq(17)
   end
 
   it 'does not prevent stubbing methods on an unloaded nested constant with a name that matches a top-level constant' do
-    double = fire_double("TestObject::Hash")
+    double = instance_double("TestObject::Hash")
     double.stub(:foo).and_return("bar")
     double.foo.should eq("bar")
   end
@@ -216,18 +216,18 @@ describe '#fire_double' do
       ::RSpec::Matchers.configuration.syntax = :expect
       expect(5).not_to respond_to(:should, :should_not)
 
-      double = fire_double("TestObject")
+      double = instance_double("TestObject")
       double.should_receive(:defined_method_one_arg).with(8)
       double.defined_method_one_arg(8)
     end
   end
 end
 
-describe '#fire_class_double' do
-  let(:doubled_object) { fire_class_double("TestClass") }
+describe '#class_double' do
+  let(:doubled_object) { class_double("TestClass") }
 
   it_should_behave_like 'a fire-enhanced double'
-  it_should_behave_like "verifying named constants", :fire_class_double
+  it_should_behave_like "verifying named constants", :class_double
 
   it 'uses a module for the doubled object so that it supports nested constants like a real class' do
     doubled_object.should be_a(Module)
@@ -250,7 +250,7 @@ describe '#fire_class_double' do
   end
 
   it 'allows stubs to be specified as a hash' do
-    double = fire_class_double("SomeClass", :a => 5, :b => 8)
+    double = class_double("SomeClass", :a => 5, :b => 8)
     double.a.should eq(5)
     double.b.should eq(8)
   end
@@ -260,7 +260,7 @@ describe '#fire_class_double' do
     mod.stub(:use)
     expect { mod.use }.to raise_error(/private method `use' called/)
 
-    fire_double = fire_class_double("TestClass")
+    fire_double = class_double("TestClass")
     fire_double.stub(:use)
     fire_double.use # should not raise an error
   end if defined?(::RSpec::Mocks::TestDouble)
@@ -270,8 +270,8 @@ def reset_rspec_mocks
   ::RSpec::Mocks.space.reset_all
 end
 
-describe '#fire_replaced_class_double (for an existing class)' do
-  let(:doubled_object) { fire_replaced_class_double("TestClass") }
+describe '.as_stubbed_const (for an existing class)' do
+  let(:doubled_object) { class_double("TestClass").as_stubbed_const }
 
   it_should_behave_like 'a fire-enhanced double'
 
@@ -284,40 +284,34 @@ describe '#fire_replaced_class_double (for an existing class)' do
   end
 
   it 'supports transferring nested constants to the double' do
-    fire_class_double("TestClass").as_replaced_constant(:transfer_nested_constants => true)
+    class_double("TestClass").as_stubbed_const(:transfer_nested_constants => true)
     TestClass::M.should eq(:m)
     TestClass::N.should eq(:n)
   end
 
-  def use_doubles(class_double, instance_double)
-    instance_double.should_receive(:defined_method).and_return(3)
-    class_double.should_receive(:defined_method).and_return(4)
+  def use_doubles(class_double_obj, instance_double_obj)
+    instance_double_obj.should_receive(:defined_method).and_return(3)
+    class_double_obj.should_receive(:defined_method).and_return(4)
 
-    instance_double.defined_method.should eq(3)
-    class_double.defined_method.should eq(4)
+    instance_double_obj.defined_method.should eq(3)
+    class_double_obj.defined_method.should eq(4)
 
-    expect { instance_double.should_receive(:undefined_method) }.to fail_matching("does not implement")
-    expect { class_double.should_receive(:undefined_method) }.to fail_matching("does not implement")
+    expect { instance_double_obj.should_receive(:undefined_method) }.to fail_matching("does not implement")
+    expect { class_double_obj.should_receive(:undefined_method) }.to fail_matching("does not implement")
   end
 
   it 'can be used after a declared fire_double for the same class' do
-    instance_double = fire_double("TestClass")
-    class_double = fire_replaced_class_double("TestClass")
-
-    use_doubles class_double, instance_double
+    use_doubles instance_double("TestClass"), class_double("TestClass")
   end
 
   it 'can be used before a declared fire_double for the same class' do
-    class_double = fire_replaced_class_double("TestClass")
-    instance_double = fire_double("TestClass")
-
-    use_doubles class_double, instance_double
+    use_doubles class_double("TestClass"), instance_double("TestClass")
   end
 end
 
-describe '#fire_replaced_class_double (for a non-existant class)' do
+describe '.as_stubbed_const (for a non-existant class)' do
   it 'allows any method to be mocked' do
-    double = fire_replaced_class_double("A::B::C")
+    double = class_double("A::B::C").as_stubbed_const
     double.should_receive(:foo).with("a").and_return(:bar)
     A::B::C.foo("a").should eq(:bar)
   end
@@ -331,17 +325,13 @@ describe '#fire_replaced_class_double (for a non-existant class)' do
   end
 
   it 'can be used after a declared fire_double for the same class' do
-    instance_double = fire_double("A::B::C")
-    class_double = fire_replaced_class_double("A::B::C")
-
-    use_doubles class_double, instance_double
+    use_doubles class_double("A::B::C").as_stubbed_const,
+                instance_double("A::B::C")
   end
 
   it 'can be used before a declared fire_double for the same class' do
-    class_double = fire_replaced_class_double("A::B::C")
-    instance_double = fire_double("A::B::C")
-
-    use_doubles class_double, instance_double
+    use_doubles class_double("A::B::C").as_stubbed_const,
+                instance_double("A::B::C")
   end
 end
 
@@ -425,5 +415,27 @@ describe RSpec::Fire::SupportArityMatcher do
         method(:m).should support_arity(2)
       }.to raise_error(/Expected 1, got 2/)
     end
+  end
+end
+
+describe 'deprecation' do
+  specify '#fire_double warns user of deprecated usage' do
+    Kernel.should_receive(:warn)
+    fire_double("TestClass")
+  end
+
+  specify '#fire_class_double warns user of deprecated usage' do
+    Kernel.should_receive(:warn)
+    fire_class_double("TestClass")
+  end
+
+  specify '#fire_replaced_class_double warns user of deprecated usage' do
+    Kernel.should_receive(:warn)
+    fire_replaced_class_double("TestClass")
+  end
+
+  specify '#fire_replaced_class_double warns user of deprecated usage' do
+    Kernel.should_receive(:warn)
+    class_double("TestClass").as_replaced_constant
   end
 end

@@ -292,12 +292,17 @@ module RSpec
         extend StringRepresentations
       end
 
-      def as_replaced_constant(options = {})
+      def as_stubbed_const(options = {})
         RSpec::Mocks::ConstantStubber.stub(@__doubled_class_name, self, options)
         @__original_class = RSpec::Mocks::Constant.original(@__doubled_class_name).original_value
 
         extend AsReplacedConstant
         self
+      end
+
+      def as_replaced_constant(*args)
+        RSpec::Fire::DEPRECATED["as_replaced_constant is deprecated, use as_stubbed_const instead."]
+        as_stubbed_const(*args)
       end
 
       def name
@@ -326,16 +331,32 @@ module RSpec
       yield const.original_value if const.stubbed?
     end
 
-    def fire_double(*args)
+    def instance_double(*args)
       FireObjectDouble.new(*args)
     end
 
-    def fire_class_double(*args)
+    def class_double(*args)
       FireClassDouble.new(*args)
     end
 
-    def fire_replaced_class_double(*args)
-      fire_class_double(*args).as_replaced_constant
+    def fire_double(*args)
+      DEPRECATED["fire_double is deprecated, use instance_double instead."]
+      instance_double(*args)
     end
+
+    def fire_class_double(*args)
+      DEPRECATED["fire_class_double is deprecated, use class_double instead."]
+      class_double(*args)
+    end
+
+    def fire_replaced_class_double(*args)
+      DEPRECATED["fire_replaced_class_double is deprecated, use class_double with as_stubbed_const instead."]
+      class_double(*args).as_stubbed_const
+    end
+
+    DEPRECATED = lambda do |msg|
+      Kernel.warn caller[2] + ": " + msg
+    end
+
   end
 end
