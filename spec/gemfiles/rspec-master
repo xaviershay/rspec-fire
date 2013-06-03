@@ -1,4 +1,4 @@
-source :rubygems
+source 'https://rubygems.org'
 
 gem 'rspec'
 gem 'rspec-mocks', :git => 'git://github.com/rspec/rspec-mocks.git'
