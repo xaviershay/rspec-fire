@@ -41,3 +41,8 @@
 
 1.1.3 - 3 September 2012
   * Use __send__ in case classes have overriden it. (#25)
+
+1.2.0 - 2 June 2013
+  * Support `expect` syntax.
+  * Better naming in the API: `instance_double` and `class_double`. Deprecate
+    `fire_double` and `fire_class_double`.
