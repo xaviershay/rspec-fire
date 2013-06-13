@@ -1,11 +1,8 @@
 rspec-fire
 ==========
 
-Checks that stubbed methods on your test double exist. A failure will be triggered if an invalid
-method is being stubbed.
-
-
-## Making your test doubles more resilient.
+Checks that stubbed methods on your test double exist, but still allow you to run in isolation
+when you choose. A failure will be triggered if an invalid method is being stubbed.
 
     Once,
     a younger brother came to him,
