@@ -73,7 +73,7 @@ Specify the class being doubled in your specs:
     describe User, '#suspend!' do
       it 'sends a notification' do
         # Only this one line differs from how you write specs normally
-        notifier = fire_double("EmailNotifier")
+        notifier = instance_double("EmailNotifier")
 
         notifier.should_receive(:notify).with("suspended as")
 
@@ -118,7 +118,7 @@ A workaround is to explicitly define the methods you are mocking:
 ### Doubling constants
 
 A particularly excellent feature. You can stub out constants using
-`fire_replaced_class_double`, removing the need to dependency inject
+`class_double`, removing the need to dependency inject
 collaborators (a technique that can sometimes be cumbersome).
 
     class User
@@ -130,10 +130,7 @@ collaborators (a technique that can sometimes be cumbersome).
     describe User, '#suspend!' do
       it 'sends a notification' do
         # Only this one line differs from how you write specs normally
-        notifier = fire_replaced_class_double("EmailNotifier")
-
-        # Alternately, you can use this fluent interface
-        notifier = fire_class_double("EmailNotifier").as_replaced_constant
+        notifier = class_double("EmailNotifier").as_stubbed_constant
 
         notifier.should_receive(:notify).with("suspended as")
 
@@ -147,7 +144,7 @@ name for it.
 
 ### Transferring nested constants to doubled constants
 
-When you use `fire_replaced_class_double` to replace a class or module
+When you use `class_double` to replace a class or module
 that also acts as a namespace for other classes and constants, your
 access to these constants is cut off for the duration of the example
 (since the doubled constant does not automatically have all of the
@@ -160,23 +157,23 @@ to deal with this:
     end
 
     # once you do this, you can no longer access MyCoolGem::Widget in your example...
-    fire_replaced_class_double("MyCoolGem")
+    class_double("MyCoolGem")
 
     # ...unless you tell rspec-fire to transfer all nested constants
-    fire_class_double("MyCoolGem").as_replaced_constant(:transfer_nested_constants => true)
+    class_double("MyCoolGem").as_stubbed_constant(:transfer_nested_constants => true)
 
     # ...or give it a list of constants to transfer
-    fire_class_double("MyCoolGem").as_replaced_constant(:transfer_nested_constants => [:Widget])
+    class_double("MyCoolGem").as_stubbed_constant(:transfer_nested_constants => [:Widget])
 
 ### Doubling class methods
 
-Particularly handy for `ActiveRecord` finders. Use `fire_class_double`. If you
+Particularly handy for `ActiveRecord` finders. Use `class_double`. If you
 dig into the code, you'll find you can create subclasses of `FireDouble` to
 check for *any* set of methods.
 
 ### Preventing Typo'd Constant Names
 
-`fire_double("MyClas")` will not verify any mocked methods, even when
+`instance_double("MyClas")` will not verify any mocked methods, even when
 `MyClass` is loaded, because of the typo in the constant name. There's
 an option to help prevent these sorts of fat-finger errors:
 
