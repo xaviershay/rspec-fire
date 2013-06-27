@@ -130,7 +130,7 @@ collaborators (a technique that can sometimes be cumbersome).
     describe User, '#suspend!' do
       it 'sends a notification' do
         # Only this one line differs from how you write specs normally
-        notifier = class_double("EmailNotifier").as_stubbed_constant
+        notifier = class_double("EmailNotifier").as_stubbed_const
 
         notifier.should_receive(:notify).with("suspended as")
 
@@ -160,10 +160,10 @@ to deal with this:
     class_double("MyCoolGem")
 
     # ...unless you tell rspec-fire to transfer all nested constants
-    class_double("MyCoolGem").as_stubbed_constant(:transfer_nested_constants => true)
+    class_double("MyCoolGem").as_stubbed_const(:transfer_nested_constants => true)
 
     # ...or give it a list of constants to transfer
-    class_double("MyCoolGem").as_stubbed_constant(:transfer_nested_constants => [:Widget])
+    class_double("MyCoolGem").as_stubbed_const(:transfer_nested_constants => [:Widget])
 
 ### Doubling class methods
 
