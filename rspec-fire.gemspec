@@ -19,6 +19,6 @@ Gem::Specification.new do |s|
                      rspec-fire.gemspec
                    )
 
-  s.add_dependency 'rspec', '~> 2.11'
+  s.add_dependency 'rspec', ['>= 2.11', '< 4']
   s.add_development_dependency 'rake'
 end

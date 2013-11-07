@@ -166,25 +166,6 @@ shared_examples_for 'a fire-enhanced double' do
     let(:method_under_test) { :should_not_receive }
     it_should_behave_like 'a fire-enhanced double method'
   end
-
-  [ :stub, :stub! ].each do |stubber|
-    describe "##{stubber}" do
-      let(:method_under_test) { stubber }
-      it_should_behave_like 'a fire-enhanced double method'
-
-      context "RSpec's hash shortcut syntax" do
-        context 'doubled class is not loaded' do
-          let(:doubled_object) { instance_double("UnloadedObject") }
-          should_allow(:undefined_method => 123)
-        end
-
-        context 'doubled class is loaded' do
-          should_allow(:defined_method => 456)
-          should_not_allow(:undefined_method => 789)
-        end
-      end
-    end
-  end
 end
 
 describe '#instance_double' do
