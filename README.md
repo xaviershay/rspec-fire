@@ -1,3 +1,14 @@
+TOTALLY OBSOLETE
+================
+
+RSpec fire has been completely subsumed by the [verifying
+doubles](https://relishapp.com/rspec/rspec-mocks/v/3-0/docs/verifying-doubles)
+feature in RSpec 3, which uses the same API. It's not just a port, the RSpec
+3 ones are strictly better.
+
+Leaving this here for posterity, but patches will not be accepted and there
+will be no further releases.
+
 rspec-fire
 ==========
 
